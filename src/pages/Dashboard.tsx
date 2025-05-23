@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { 
-  Music, Upload, Library, Wallet, Users, Ban, FileText, Youtube, User,
+  Music, Upload, Library, WalletIcon, Users, Ban, FileText, Youtube, User,
   ChevronDown, ChevronRight, Home, Settings, Menu, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ const Dashboard = () => {
       case "releases":
         return <MyReleases />;
       case "wallet":
-        return <Wallet />;
+        return <WalletComponent />;
       case "management":
         return <Management />;
       case "takedown":
@@ -120,7 +120,7 @@ const Dashboard = () => {
             className={`w-full justify-start ${activeTab === "wallet" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
             onClick={() => setActiveTab("wallet")}
           >
-            <Wallet className="mr-2 h-4 w-4" />
+            <WalletIcon className="mr-2 h-4 w-4" />
             Wallet / Earnings
           </Button>
 
@@ -223,7 +223,7 @@ const DashboardOverview = () => {
           title="Total Earnings" 
           value="₹12,480" 
           description="Lifetime earnings"
-          icon={<Wallet className="h-8 w-8 text-green-500" />}
+          icon={<WalletIcon className="h-8 w-8 text-green-500" />}
         />
         <StatsCard 
           title="Artist Profiles" 
@@ -353,7 +353,8 @@ const MyReleases = () => (
   </div>
 );
 
-const Wallet = () => (
+// Renamed from "Wallet" to "WalletComponent" to avoid naming conflict
+const WalletComponent = () => (
   <div>
     <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
       Wallet / Earnings
