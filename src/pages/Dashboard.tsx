@@ -7,6 +7,7 @@ import { Music, DollarSign, FileText, User, Plus, BarChart2, Globe, Shield } fro
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -211,6 +212,35 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [user]);
 
+  // Function handlers for button clicks
+  const handleCreateRelease = () => {
+    toast({
+      title: "Create Release",
+      description: "Create release feature will be available soon.",
+    });
+  };
+
+  const handleAddArtist = () => {
+    toast({
+      title: "Add Artist",
+      description: "Add artist feature will be available soon.",
+    });
+  };
+
+  const handleRequestOAC = () => {
+    toast({
+      title: "Request OAC",
+      description: "OAC request feature will be available soon.",
+    });
+  };
+
+  const handleViewAnalytics = () => {
+    toast({
+      title: "View Analytics",
+      description: "Analytics feature will be available soon.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -291,16 +321,28 @@ const Dashboard = () => {
       <div className="mb-8">
         <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <Button className="py-6 bg-purple-800 hover:bg-purple-700 flex items-center justify-center gap-2">
+          <Button 
+            className="py-6 bg-purple-800 hover:bg-purple-700 flex items-center justify-center gap-2"
+            onClick={handleCreateRelease}
+          >
             <Plus className="h-5 w-5" /> New Release
           </Button>
-          <Button className="py-6 bg-blue-800 hover:bg-blue-700 flex items-center justify-center gap-2">
+          <Button 
+            className="py-6 bg-blue-800 hover:bg-blue-700 flex items-center justify-center gap-2"
+            onClick={handleAddArtist}
+          >
             <User className="h-5 w-5" /> Add Artist
           </Button>
-          <Button className="py-6 bg-green-800 hover:bg-green-700 flex items-center justify-center gap-2">
+          <Button 
+            className="py-6 bg-green-800 hover:bg-green-700 flex items-center justify-center gap-2"
+            onClick={handleRequestOAC}
+          >
             <Shield className="h-5 w-5" /> Request OAC
           </Button>
-          <Button className="py-6 bg-orange-800 hover:bg-orange-700 flex items-center justify-center gap-2">
+          <Button 
+            className="py-6 bg-orange-800 hover:bg-orange-700 flex items-center justify-center gap-2"
+            onClick={handleViewAnalytics}
+          >
             <BarChart2 className="h-5 w-5" /> View Analytics
           </Button>
         </div>
@@ -310,7 +352,10 @@ const Dashboard = () => {
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white">Recent Releases</h2>
-          <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
+          <Button 
+            variant="outline" 
+            className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white"
+          >
             View All
           </Button>
         </div>
@@ -331,6 +376,11 @@ const Dashboard = () => {
                     />
                   </div>
                 )}
+                {!release.cover_art && (
+                  <div className="w-full h-48 bg-gray-700 flex items-center justify-center">
+                    <Music className="h-12 w-12 text-gray-500" />
+                  </div>
+                )}
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg text-white">{release.song_name}</CardTitle>
                   <CardDescription className="text-gray-400">
@@ -338,7 +388,11 @@ const Dashboard = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-white">
+                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    release.status === 'approved' ? 'bg-green-900 text-green-300' : 
+                    release.status === 'pending' ? 'bg-yellow-900 text-yellow-300' : 
+                    'bg-gray-700 text-white'
+                  }`}>
                     {release.status.toUpperCase()}
                   </div>
                 </CardContent>
@@ -348,7 +402,7 @@ const Dashboard = () => {
             <div className="col-span-3 text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
               <Music className="h-12 w-12 text-gray-500 mx-auto mb-3" />
               <p className="text-gray-400">No releases yet. Create your first release!</p>
-              <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+              <Button className="mt-4 bg-purple-600 hover:bg-purple-700" onClick={handleCreateRelease}>
                 <Plus className="h-4 w-4 mr-2" /> Create Release
               </Button>
             </div>
@@ -385,7 +439,7 @@ const Dashboard = () => {
               <CardContent className="text-center py-8">
                 <User className="h-12 w-12 text-gray-500 mx-auto mb-3" />
                 <p className="text-gray-400">No artists added yet.</p>
-                <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+                <Button className="mt-4 bg-purple-600 hover:bg-purple-700" onClick={handleAddArtist}>
                   <Plus className="h-4 w-4 mr-2" /> Add Artist
                 </Button>
               </CardContent>
