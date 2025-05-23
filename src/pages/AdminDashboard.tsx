@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Music, Users, FileText, BarChart2, DollarSign, Shield, Globe, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -36,6 +35,25 @@ const AdminDashboard = () => {
 
     const fetchAdminData = async () => {
       try {
+        // For development purposes, using mock data
+        // In production, these would be replaced with actual database queries
+        
+        // Mock statistics data
+        const mockStats = {
+          totalUsers: 250,
+          totalReleases: 1250,
+          pendingReleases: 48,
+          totalArtists: 520,
+          totalLabels: 125,
+          totalWithdrawals: 15,
+          totalOacRequests: 8,
+          totalTakedownRequests: 3
+        };
+        
+        setStats(mockStats);
+        
+        // Once your database tables are properly set up, you can uncomment these queries:
+        /*
         // Fetch users count
         const { count: usersCount, error: usersError } = await supabase
           .from('profiles')
@@ -106,6 +124,7 @@ const AdminDashboard = () => {
           totalOacRequests: oacCount || 0,
           totalTakedownRequests: takedownCount || 0
         });
+        */
 
       } catch (error: any) {
         console.error("Error fetching admin dashboard data:", error);

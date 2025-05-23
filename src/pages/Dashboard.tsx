@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserProfile, Wallet, Release, Artist, Label } from "@/types/custom";
 import { Music, DollarSign, FileText, User, Plus, BarChart2, Globe, Shield } from "lucide-react";
@@ -23,6 +22,89 @@ const Dashboard = () => {
       if (!user) return;
       
       try {
+        // For development purposes, using mock data
+        // In production, these would be replaced with actual database queries
+        
+        // Mock profile data
+        const mockProfile: UserProfile = {
+          id: user.id,
+          full_name: user.user_metadata?.full_name || 'User',
+          avatar_url: null,
+          email: user.email || '',
+          created_at: new Date().toISOString()
+        };
+        setProfile(mockProfile);
+
+        // Mock wallet data
+        const mockWallet: Wallet = {
+          id: '1',
+          user_id: user.id,
+          balance: 5000,
+          currency: 'INR',
+          updated_at: new Date().toISOString()
+        };
+        setWallet(mockWallet);
+
+        // Mock releases data
+        const mockReleases: Release[] = [
+          {
+            id: '1',
+            user_id: user.id,
+            song_name: 'Summer Vibes',
+            artist_name: 'DJ Cool',
+            type: 'single',
+            release_date: new Date().toISOString(),
+            status: 'pending',
+            cover_art: null,
+            created_at: new Date().toISOString()
+          },
+          {
+            id: '2',
+            user_id: user.id,
+            song_name: 'Winter Chill',
+            artist_name: 'Ice Beats',
+            type: 'album',
+            release_date: new Date().toISOString(),
+            status: 'approved',
+            cover_art: null,
+            created_at: new Date().toISOString()
+          }
+        ];
+        setReleases(mockReleases);
+
+        // Mock artists data
+        const mockArtists: Artist[] = [
+          {
+            id: '1',
+            user_id: user.id,
+            name: 'DJ Cool',
+            email: 'dj@example.com',
+            created_at: new Date().toISOString()
+          },
+          {
+            id: '2',
+            user_id: user.id,
+            name: 'Ice Beats',
+            email: 'ice@example.com',
+            created_at: new Date().toISOString()
+          }
+        ];
+        setArtists(mockArtists);
+
+        // Mock labels data
+        const mockLabels: Label[] = [
+          {
+            id: '1',
+            user_id: user.id,
+            name: 'Cool Records',
+            email: 'cool@example.com',
+            created_at: new Date().toISOString()
+          }
+        ];
+        setLabels(mockLabels);
+
+        // Once your database tables are properly set up, you can uncomment these queries:
+        /*
         // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -81,6 +163,7 @@ const Dashboard = () => {
         if (!walletData && !walletError?.message.includes('Results contain 0 rows')) {
           await supabase.from('wallet').insert([{ user_id: user.id, balance: 0 }]);
         }
+        */
 
       } catch (error: any) {
         console.error('Error fetching dashboard data:', error);

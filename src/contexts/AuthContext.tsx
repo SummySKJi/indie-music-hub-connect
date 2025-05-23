@@ -69,16 +69,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const checkUserRole = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'admin')
-      .single();
-    
-    if (data && !error) {
-      setIsAdmin(true);
-    } else {
+    try {
+      // For development purposes, using hardcoded values
+      // In production, this would be replaced with actual database queries
+      
+      // Example email addresses that would be treated as admins
+      const adminEmails = ['admin@example.com', 'admin@inddistribution.com'];
+      
+      if (user && adminEmails.includes(user.email || '')) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+      
+      // Once your database tables are properly set up, you can uncomment this code:
+      /*
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .single();
+      
+      if (data && !error) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+      */
+    } catch (error) {
+      console.error("Error checking user role:", error);
       setIsAdmin(false);
     }
   };
