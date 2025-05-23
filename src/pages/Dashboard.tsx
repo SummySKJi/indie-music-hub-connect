@@ -29,9 +29,11 @@ const Dashboard = () => {
         const mockProfile: UserProfile = {
           id: user.id,
           full_name: user.user_metadata?.full_name || 'User',
-          avatar_url: null,
           email: user.email || '',
-          created_at: new Date().toISOString()
+          phone: null,
+          whatsapp: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
         setProfile(mockProfile);
 
@@ -40,7 +42,7 @@ const Dashboard = () => {
           id: '1',
           user_id: user.id,
           balance: 5000,
-          currency: 'INR',
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
         setWallet(mockWallet);
@@ -50,24 +52,38 @@ const Dashboard = () => {
           {
             id: '1',
             user_id: user.id,
-            song_name: 'Summer Vibes',
-            artist_name: 'DJ Cool',
             type: 'single',
+            song_name: 'Summer Vibes',
+            artist_id: '1',
+            lyrics_name: ['Summer Lyrics'],
+            copyright: 'Copyright 2025',
+            language: 'English',
             release_date: new Date().toISOString(),
-            status: 'pending',
+            label_id: '1',
+            audio_file: 'audio1.mp3',
             cover_art: null,
-            created_at: new Date().toISOString()
+            platforms: ['Spotify', 'Apple Music'],
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           },
           {
             id: '2',
             user_id: user.id,
-            song_name: 'Winter Chill',
-            artist_name: 'Ice Beats',
             type: 'album',
+            song_name: 'Winter Chill',
+            artist_id: '2',
+            lyrics_name: ['Winter Lyrics'],
+            copyright: 'Copyright 2025',
+            language: 'English',
             release_date: new Date().toISOString(),
-            status: 'approved',
+            label_id: '1',
+            audio_file: 'audio2.mp3',
             cover_art: null,
-            created_at: new Date().toISOString()
+            platforms: ['Spotify', 'Apple Music'],
+            status: 'approved',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ];
         setReleases(mockReleases);
@@ -79,14 +95,24 @@ const Dashboard = () => {
             user_id: user.id,
             name: 'DJ Cool',
             email: 'dj@example.com',
-            created_at: new Date().toISOString()
+            phone: '1234567890',
+            country: 'India',
+            genres: ['Electronic', 'Pop'],
+            languages: ['English', 'Hindi'],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           },
           {
             id: '2',
             user_id: user.id,
             name: 'Ice Beats',
             email: 'ice@example.com',
-            created_at: new Date().toISOString()
+            phone: '0987654321',
+            country: 'India',
+            genres: ['Hip Hop', 'Rap'],
+            languages: ['English', 'Hindi'],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ];
         setArtists(mockArtists);
@@ -98,7 +124,12 @@ const Dashboard = () => {
             user_id: user.id,
             name: 'Cool Records',
             email: 'cool@example.com',
-            created_at: new Date().toISOString()
+            phone: '1234567890',
+            country: 'India',
+            genres: ['Electronic', 'Pop'],
+            languages: ['English', 'Hindi'],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ];
         setLabels(mockLabels);
