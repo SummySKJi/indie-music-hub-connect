@@ -18,6 +18,8 @@ import WhatsAppButton from "./components/WhatsAppButton";
 import Dashboard from "./pages/Dashboard";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -28,59 +30,69 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* Public Routes with Navbar/Footer */}
-            <Route path="/" element={
-              <PublicLayout>
-                <Index />
-              </PublicLayout>
-            } />
-            <Route path="/login" element={
-              <PublicLayout>
-                <Login />
-              </PublicLayout>
-            } />
-            <Route path="/signup" element={
-              <PublicLayout>
-                <Signup />
-              </PublicLayout>
-            } />
-            <Route path="/pricing" element={
-              <PublicLayout>
-                <Pricing />
-              </PublicLayout>
-            } />
-            <Route path="/features" element={
-              <PublicLayout>
-                <Features />
-              </PublicLayout>
-            } />
-            <Route path="/platforms" element={
-              <PublicLayout>
-                <Platforms />
-              </PublicLayout>
-            } />
-            <Route path="/contact" element={
-              <PublicLayout>
-                <Contact />
-              </PublicLayout>
-            } />
+          <AuthProvider>
+            <Routes>
+              {/* Public Routes with Navbar/Footer */}
+              <Route path="/" element={
+                <PublicLayout>
+                  <Index />
+                </PublicLayout>
+              } />
+              <Route path="/login" element={
+                <PublicLayout>
+                  <Login />
+                </PublicLayout>
+              } />
+              <Route path="/signup" element={
+                <PublicLayout>
+                  <Signup />
+                </PublicLayout>
+              } />
+              <Route path="/pricing" element={
+                <PublicLayout>
+                  <Pricing />
+                </PublicLayout>
+              } />
+              <Route path="/features" element={
+                <PublicLayout>
+                  <Features />
+                </PublicLayout>
+              } />
+              <Route path="/platforms" element={
+                <PublicLayout>
+                  <Platforms />
+                </PublicLayout>
+              } />
+              <Route path="/contact" element={
+                <PublicLayout>
+                  <Contact />
+                </PublicLayout>
+              } />
 
-            {/* Dashboard Routes (No Navbar/Footer) */}
-            <Route path="/dashboard" element={<Dashboard />} />
+              {/* Dashboard Routes (No Navbar/Footer) */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
 
-            {/* Admin Routes (No Navbar/Footer) */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              {/* Admin Routes (No Navbar/Footer) */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
 
-            {/* 404 Route */}
-            <Route path="*" element={
-              <PublicLayout>
-                <NotFound />
-              </PublicLayout>
-            } />
-          </Routes>
-          <WhatsAppButton />
+              {/* 404 Route */}
+              <Route path="*" element={
+                <PublicLayout>
+                  <NotFound />
+                </PublicLayout>
+              } />
+            </Routes>
+            <WhatsAppButton />
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

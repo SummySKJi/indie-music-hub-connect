@@ -1,423 +1,321 @@
 
-import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
-import { 
-  Music, Upload, Library, WalletIcon, Users, Ban, FileText, Youtube, User,
-  ChevronDown, ChevronRight, Home, Settings, Menu, X
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserProfile, Wallet, Release, Artist, Label } from "@/types/custom";
+import { Music, DollarSign, FileText, User, Plus, BarChart2, Globe, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
-  
-  // This would normally check if user is logged in
-  const isLoggedIn = true; // In a real app, this would come from auth state
-  
-  if (!isLoggedIn) {
-    return <Navigate to="/login" />;
+  const { user, signOut } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [releases, setReleases] = useState<Release[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [labels, setLabels] = useState<Label[]>([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) return;
+      
+      try {
+        // Fetch profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError) throw profileError;
+        setProfile(profileData);
+
+        // Fetch wallet
+        const { data: walletData, error: walletError } = await supabase
+          .from('wallet')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (!walletError) {
+          setWallet(walletData);
+        }
+
+        // Fetch releases
+        const { data: releasesData, error: releasesError } = await supabase
+          .from('releases')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (!releasesError && releasesData) {
+          setReleases(releasesData);
+        }
+
+        // Fetch artists
+        const { data: artistsData, error: artistsError } = await supabase
+          .from('artists')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (!artistsError && artistsData) {
+          setArtists(artistsData);
+        }
+
+        // Fetch labels
+        const { data: labelsData, error: labelsError } = await supabase
+          .from('labels')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (!labelsError && labelsData) {
+          setLabels(labelsData);
+        }
+
+        // If wallet doesn't exist, create one
+        if (!walletData && !walletError?.message.includes('Results contain 0 rows')) {
+          await supabase.from('wallet').insert([{ user_id: user.id, balance: 0 }]);
+        }
+
+      } catch (error: any) {
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: "Failed to load data",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin inline-block w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mb-4"></div>
+          <p className="text-white">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return <DashboardOverview />;
-      case "upload":
-        return <UploadMusic />;
-      case "releases":
-        return <MyReleases />;
-      case "wallet":
-        return <WalletComponent />;
-      case "management":
-        return <Management />;
-      case "takedown":
-        return <TakedownRequest />;
-      case "reports":
-        return <RoyaltyReports />;
-      case "oac":
-        return <OfficialArtistChannel />;
-      case "profile":
-        return <CustomerProfile />;
-      default:
-        return <DashboardOverview />;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col md:flex-row">
-      {/* Mobile Header */}
-      <div className="md:hidden bg-gray-900 border-b border-gray-800 p-4">
-        <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <Music className="h-6 w-6 text-purple-500" />
-            <span className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              IND Distribution
-            </span>
-          </Link>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSidebar}
-            className="text-white"
-          >
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+    <div className="min-h-screen bg-gray-900 p-4 sm:p-6 lg:p-8">
+      <header className="flex flex-col md:flex-row justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+          <p className="text-gray-400">Welcome back, {profile?.full_name || user?.email}</p>
+        </div>
+        <div className="mt-4 md:mt-0">
+          <Button variant="outline" onClick={() => signOut()} className="text-white border-gray-600">
+            Sign Out
+          </Button>
+        </div>
+      </header>
+      
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Total Releases</p>
+                <h3 className="text-3xl font-bold text-white">{releases.length}</h3>
+              </div>
+              <FileText className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Artists</p>
+                <h3 className="text-3xl font-bold text-white">{artists.length}</h3>
+              </div>
+              <Music className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Labels</p>
+                <h3 className="text-3xl font-bold text-white">{labels.length}</h3>
+              </div>
+              <Globe className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Wallet Balance</p>
+                <h3 className="text-3xl font-bold text-white">₹{wallet?.balance || 0}</h3>
+              </div>
+              <DollarSign className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <Button className="py-6 bg-purple-800 hover:bg-purple-700 flex items-center justify-center gap-2">
+            <Plus className="h-5 w-5" /> New Release
+          </Button>
+          <Button className="py-6 bg-blue-800 hover:bg-blue-700 flex items-center justify-center gap-2">
+            <User className="h-5 w-5" /> Add Artist
+          </Button>
+          <Button className="py-6 bg-green-800 hover:bg-green-700 flex items-center justify-center gap-2">
+            <Shield className="h-5 w-5" /> Request OAC
+          </Button>
+          <Button className="py-6 bg-orange-800 hover:bg-orange-700 flex items-center justify-center gap-2">
+            <BarChart2 className="h-5 w-5" /> View Analytics
           </Button>
         </div>
       </div>
-
-      {/* Sidebar */}
-      <div 
-        className={`${
-          isSidebarOpen ? "block" : "hidden"
-        } md:block bg-gray-900 border-r border-gray-800 w-full md:w-64 p-6 space-y-8 absolute md:relative z-10 top-16 md:top-0 h-[calc(100vh-4rem)] md:h-screen overflow-y-auto`}
-      >
-        <div className="hidden md:flex items-center space-x-2 mb-8">
-          <Music className="h-8 w-8 text-purple-500" />
-          <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            IND Distribution
-          </span>
-        </div>
-
-        <div className="space-y-1">
-          <h3 className="text-xs uppercase text-gray-500 font-semibold tracking-wider mb-2">
-            Dashboard
-          </h3>
-
-          <Button
-            variant={activeTab === "overview" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "overview" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("overview")}
-          >
-            <Home className="mr-2 h-4 w-4" />
-            Overview
-          </Button>
-
-          <Button
-            variant={activeTab === "upload" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "upload" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("upload")}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Music
-          </Button>
-
-          <Button
-            variant={activeTab === "releases" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "releases" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("releases")}
-          >
-            <Library className="mr-2 h-4 w-4" />
-            My Releases
-          </Button>
-
-          <Button
-            variant={activeTab === "wallet" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "wallet" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("wallet")}
-          >
-            <WalletIcon className="mr-2 h-4 w-4" />
-            Wallet / Earnings
-          </Button>
-
-          <Button
-            variant={activeTab === "management" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "management" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("management")}
-          >
-            <Users className="mr-2 h-4 w-4" />
-            Management
-          </Button>
-
-          <Button
-            variant={activeTab === "takedown" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "takedown" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("takedown")}
-          >
-            <Ban className="mr-2 h-4 w-4" />
-            Takedown Request
-          </Button>
-
-          <Button
-            variant={activeTab === "reports" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "reports" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("reports")}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            Royalty Reports
-          </Button>
-
-          <Button
-            variant={activeTab === "oac" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "oac" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("oac")}
-          >
-            <Youtube className="mr-2 h-4 w-4" />
-            Official Artist Channel
-          </Button>
-
-          <Button
-            variant={activeTab === "profile" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "profile" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("profile")}
-          >
-            <User className="mr-2 h-4 w-4" />
-            Profile
+      
+      {/* Recent Releases */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-white">Recent Releases</h2>
+          <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
+            View All
           </Button>
         </div>
-
-        <div className="pt-4 mt-8 border-t border-gray-800">
-          <div className="flex items-center mb-4">
-            <div className="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-2">
-              <span className="font-medium">JS</span>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {releases.length > 0 ? (
+            releases.slice(0, 3).map(release => (
+              <Card key={release.id} className="bg-gray-800 border-gray-700 overflow-hidden">
+                {release.cover_art && (
+                  <div className="w-full h-48 bg-gray-700">
+                    <img 
+                      src={`https://bifsslngdjrcxawbcend.supabase.co/storage/v1/object/public/cover_art/${release.cover_art}`} 
+                      alt={release.song_name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                  </div>
+                )}
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg text-white">{release.song_name}</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    {release.type.charAt(0).toUpperCase() + release.type.slice(1)} • {new Date(release.release_date).toLocaleDateString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-white">
+                    {release.status.toUpperCase()}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
+              <Music className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+              <p className="text-gray-400">No releases yet. Create your first release!</p>
+              <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+                <Plus className="h-4 w-4 mr-2" /> Create Release
+              </Button>
             </div>
-            <div>
-              <p className="text-sm font-medium">John Smith</p>
-              <p className="text-xs text-gray-400">john@example.com</p>
-            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Artists & Labels */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-white">Your Artists</h2>
+            <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
+              View All
+            </Button>
           </div>
           
-          <Button variant="outline" className="w-full border-gray-700 hover:bg-gray-800">
-            <Settings className="mr-2 h-4 w-4" />
-            Account Settings
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-6 md:p-8 bg-gray-950 overflow-y-auto">
-        {renderContent()}
-      </div>
-    </div>
-  );
-};
-
-// Dashboard Overview Component
-const DashboardOverview = () => {
-  return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-          Dashboard Overview
-        </h1>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard 
-          title="Total Releases" 
-          value="14" 
-          description="Across all platforms"
-          icon={<Music className="h-8 w-8 text-purple-500" />}
-        />
-        <StatsCard 
-          title="Pending Reviews" 
-          value="3" 
-          description="Awaiting approval"
-          icon={<Upload className="h-8 w-8 text-blue-500" />}
-        />
-        <StatsCard 
-          title="Total Earnings" 
-          value="₹12,480" 
-          description="Lifetime earnings"
-          icon={<WalletIcon className="h-8 w-8 text-green-500" />}
-        />
-        <StatsCard 
-          title="Artist Profiles" 
-          value="5" 
-          description="Managed profiles"
-          icon={<Users className="h-8 w-8 text-pink-500" />}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-gray-900 border-gray-800 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-white text-xl">Recent Releases</CardTitle>
-            <CardDescription className="text-gray-400">Your latest music uploads</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { title: "Summer Vibes", artist: "DJ Groove", status: "Live", date: "2 days ago" },
-                { title: "Midnight Dreams", artist: "Moonlight", status: "Pending", date: "1 week ago" },
-                { title: "Urban Echo", artist: "City Sound", status: "Live", date: "2 weeks ago" }
-              ].map((release, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 bg-gray-700 rounded-md flex items-center justify-center">
-                      <Music className="h-6 w-6 text-gray-400" />
+          <Card className="bg-gray-800 border-gray-700">
+            {artists.length > 0 ? (
+              <div className="divide-y divide-gray-700">
+                {artists.slice(0, 4).map(artist => (
+                  <div key={artist.id} className="p-4 flex items-center">
+                    <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center mr-3">
+                      <span className="text-white font-bold">{artist.name.charAt(0)}</span>
                     </div>
-                    <div className="ml-4">
-                      <p className="font-medium text-white">{release.title}</p>
-                      <p className="text-sm text-gray-400">{release.artist}</p>
+                    <div>
+                      <h4 className="font-semibold text-white">{artist.name}</h4>
+                      <p className="text-sm text-gray-400">{artist.email}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      release.status === "Live" ? "bg-green-900 text-green-400" : "bg-yellow-900 text-yellow-400"
-                    }`}>
-                      {release.status}
-                    </span>
-                    <p className="text-xs text-gray-500 mt-1">{release.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button variant="link" className="w-full mt-4 text-purple-400 hover:text-purple-300">
-              View All Releases
+                ))}
+              </div>
+            ) : (
+              <CardContent className="text-center py-8">
+                <User className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-400">No artists added yet.</p>
+                <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+                  <Plus className="h-4 w-4 mr-2" /> Add Artist
+                </Button>
+              </CardContent>
+            )}
+          </Card>
+        </div>
+        
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-white">Your Labels</h2>
+            <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
+              View All
             </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gray-900 border-gray-800 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-white text-xl">Recent Activities</CardTitle>
-            <CardDescription className="text-gray-400">Latest actions on your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { action: "Song uploaded", details: "Midnight Dreams", time: "2 days ago" },
-                { action: "Earnings deposited", details: "₹580 added to wallet", time: "1 week ago" },
-                { action: "New artist created", details: "Added profile for 'DJ Groove'", time: "2 weeks ago" },
-                { action: "Withdrawal requested", details: "₹1,200 to UPI", time: "3 weeks ago" }
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center p-3 bg-gray-800 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium text-white">{activity.action}</p>
-                    <p className="text-sm text-gray-400">{activity.details}</p>
+          </div>
+          
+          <Card className="bg-gray-800 border-gray-700">
+            {labels.length > 0 ? (
+              <div className="divide-y divide-gray-700">
+                {labels.slice(0, 4).map(label => (
+                  <div key={label.id} className="p-4 flex items-center">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">
+                      <span className="text-white font-bold">{label.name.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">{label.name}</h4>
+                      <p className="text-sm text-gray-400">{label.email}</p>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">{activity.time}</div>
-                </div>
-              ))}
-            </div>
-            <Button variant="link" className="w-full mt-4 text-purple-400 hover:text-purple-300">
-              View All Activities
-            </Button>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            ) : (
+              <CardContent className="text-center py-8">
+                <Globe className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-400">No labels added yet.</p>
+                <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+                  <Plus className="h-4 w-4 mr-2" /> Add Label
+                </Button>
+              </CardContent>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   );
 };
-
-// Stats Card Component
-const StatsCard = ({ title, value, description, icon }: { 
-  title: string; 
-  value: string; 
-  description: string; 
-  icon: React.ReactNode;
-}) => {
-  return (
-    <Card className="bg-gray-900 border-gray-800 shadow-lg">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-400">{title}</p>
-            <p className="text-2xl font-bold text-white mt-1">{value}</p>
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
-          </div>
-          <div className="bg-gray-800 p-3 rounded-lg">
-            {icon}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Placeholder components for different sections
-const UploadMusic = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-      Upload Music
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Upload music form will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const MyReleases = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-      My Releases
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">List of releases will be displayed here.</p>
-    </div>
-  </div>
-);
-
-// Renamed from "Wallet" to "WalletComponent" to avoid naming conflict
-const WalletComponent = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-      Wallet / Earnings
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Wallet and earnings information will be displayed here.</p>
-    </div>
-  </div>
-);
-
-const Management = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-      Management
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Artist and label management will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const TakedownRequest = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-      Takedown Request
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Copyright removal/takedown request form will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const RoyaltyReports = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-      Royalty Reports
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Royalty and earnings reports will be displayed here.</p>
-    </div>
-  </div>
-);
-
-const OfficialArtistChannel = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-      Official Artist Channel
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">OAC request form will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const CustomerProfile = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-      My Profile
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">User profile information and settings will be displayed here.</p>
-    </div>
-  </div>
-);
 
 export default Dashboard;

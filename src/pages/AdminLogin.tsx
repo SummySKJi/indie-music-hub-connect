@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -14,18 +16,21 @@ const AdminLogin = () => {
     email: "",
     password: ""
   });
-  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signIn } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    // Simple admin login validation
-    if (formData.email === "admin@mdi.in" && formData.password === "11111111") {
-      console.log("Admin login successful");
+    const { error } = await signIn(formData.email, formData.password);
+    
+    if (!error) {
+      // Check if user is admin - this is handled in AuthContext with isAdmin state
       navigate("/admin/dashboard");
-    } else {
-      setError("Invalid admin credentials");
     }
+    
+    setIsSubmitting(false);
   };
 
   return (
@@ -49,12 +54,6 @@ const AdminLogin = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-2 rounded text-sm">
-                  {error}
-                </div>
-              )}
-              
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white">Admin Email</Label>
                 <div className="relative">
@@ -68,6 +67,7 @@ const AdminLogin = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 pl-10"
+                    disabled={isSubmitting}
                     required
                   />
                 </div>
@@ -86,6 +86,7 @@ const AdminLogin = () => {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 pl-10 pr-10"
+                    disabled={isSubmitting}
                     required
                   />
                   <button
@@ -101,8 +102,9 @@ const AdminLogin = () => {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
+                disabled={isSubmitting}
               >
-                Sign In to Admin Panel
+                {isSubmitting ? "Signing In..." : "Sign In to Admin Panel"}
               </Button>
             </form>
 

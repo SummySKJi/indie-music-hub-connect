@@ -1,568 +1,359 @@
 
-import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
-import { 
-  Music, Users, Inbox, FileSpreadsheet, Ban, Youtube, FileText, 
-  Database, Settings, Menu, X, Layout, CreditCard, Bell, User, LogOut
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Music, Users, FileText, BarChart2, DollarSign, Shield, Globe, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
-  
-  // This would normally check if admin is logged in
-  const isAdminLoggedIn = true; // In a real app, this would come from auth state
-  
-  if (!isAdminLoggedIn) {
-    return <Navigate to="/admin/login" />;
-  }
+  const { user, isAdmin, signOut } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalReleases: 0,
+    pendingReleases: 0,
+    totalArtists: 0,
+    totalLabels: 0,
+    totalWithdrawals: 0,
+    totalOacRequests: 0,
+    totalTakedownRequests: 0
+  });
+  const navigate = useNavigate();
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return <AdminOverview />;
-      case "music":
-        return <MusicManagement />;
-      case "customers":
-        return <CustomerManagement />;
-      case "artists":
-        return <ArtistLabelManagement />;
-      case "payouts":
-        return <PayoutManagement />;
-      case "copyright":
-        return <CopyrightRequests />;
-      case "oac":
-        return <OACRequests />;
-      case "reports":
-        return <RoyaltyReportUpload />;
-      case "platforms":
-        return <PlatformManagement />;
-      case "settings":
-        return <AdminSettings />;
-      default:
-        return <AdminOverview />;
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate("/admin/login");
+      toast({
+        title: "Access Denied",
+        description: "You don't have administrator privileges.",
+        variant: "destructive",
+      });
+      return;
     }
-  };
 
-  return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col md:flex-row">
-      {/* Mobile Header */}
-      <div className="md:hidden bg-gray-900 border-b border-gray-800 p-4">
-        <div className="flex justify-between items-center">
-          <Link to="/admin" className="flex items-center space-x-2">
-            <Music className="h-6 w-6 text-red-500" />
-            <span className="text-lg font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-              IND Admin
-            </span>
-          </Link>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSidebar}
-            className="text-white"
-          >
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </Button>
+    const fetchAdminData = async () => {
+      try {
+        // Fetch users count
+        const { count: usersCount, error: usersError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+
+        if (usersError) throw usersError;
+
+        // Fetch total releases
+        const { count: releasesCount, error: releasesError } = await supabase
+          .from('releases')
+          .select('*', { count: 'exact', head: true });
+
+        if (releasesError) throw releasesError;
+
+        // Fetch pending releases
+        const { count: pendingReleasesCount, error: pendingError } = await supabase
+          .from('releases')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        if (pendingError) throw pendingError;
+
+        // Fetch artists count
+        const { count: artistsCount, error: artistsError } = await supabase
+          .from('artists')
+          .select('*', { count: 'exact', head: true });
+
+        if (artistsError) throw artistsError;
+
+        // Fetch labels count
+        const { count: labelsCount, error: labelsError } = await supabase
+          .from('labels')
+          .select('*', { count: 'exact', head: true });
+
+        if (labelsError) throw labelsError;
+
+        // Fetch pending withdrawal requests
+        const { count: withdrawalsCount, error: withdrawalsError } = await supabase
+          .from('withdrawal_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        if (withdrawalsError) throw withdrawalsError;
+
+        // Fetch pending OAC requests
+        const { count: oacCount, error: oacError } = await supabase
+          .from('oac_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        if (oacError) throw oacError;
+
+        // Fetch pending takedown requests
+        const { count: takedownCount, error: takedownError } = await supabase
+          .from('takedown_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        if (takedownError) throw takedownError;
+
+        setStats({
+          totalUsers: usersCount || 0,
+          totalReleases: releasesCount || 0,
+          pendingReleases: pendingReleasesCount || 0,
+          totalArtists: artistsCount || 0,
+          totalLabels: labelsCount || 0,
+          totalWithdrawals: withdrawalsCount || 0,
+          totalOacRequests: oacCount || 0,
+          totalTakedownRequests: takedownCount || 0
+        });
+
+      } catch (error: any) {
+        console.error("Error fetching admin dashboard data:", error);
+        toast({
+          title: "Failed to load data",
+          description: error.message || "Could not load admin dashboard data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdminData();
+  }, [isAdmin, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin inline-block w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full mb-4"></div>
+          <p className="text-white">Loading admin dashboard...</p>
         </div>
       </div>
+    );
+  }
 
+  return (
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Sidebar */}
-      <div 
-        className={`${
-          isSidebarOpen ? "block" : "hidden"
-        } md:block bg-gray-900 border-r border-gray-800 w-full md:w-64 p-6 space-y-8 absolute md:relative z-10 top-16 md:top-0 h-[calc(100vh-4rem)] md:h-screen overflow-y-auto`}
-      >
-        <div className="hidden md:flex items-center space-x-2 mb-8">
+      <div className="fixed inset-y-0 left-0 w-64 bg-gray-800 p-4 hidden lg:block">
+        <div className="flex items-center space-x-2 mb-8">
           <Music className="h-8 w-8 text-red-500" />
-          <span className="text-xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-            IND Admin
-          </span>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">IND Admin</h1>
         </div>
-
-        <div className="space-y-1">
-          <h3 className="text-xs uppercase text-gray-500 font-semibold tracking-wider mb-2">
-            Management
-          </h3>
-
-          <Button
-            variant={activeTab === "overview" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "overview" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("overview")}
-          >
-            <Layout className="mr-2 h-4 w-4" />
-            Dashboard
+        
+        <nav className="space-y-1">
+          <Button variant="ghost" className="w-full justify-start text-white hover:bg-gray-700">
+            <BarChart2 className="h-5 w-5 mr-3" /> Dashboard
           </Button>
-
-          <Button
-            variant={activeTab === "music" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "music" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("music")}
-          >
-            <Music className="mr-2 h-4 w-4" />
-            Music Management
+          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-700">
+            <FileText className="h-5 w-5 mr-3" /> Releases
           </Button>
-
-          <Button
-            variant={activeTab === "customers" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "customers" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("customers")}
-          >
-            <Users className="mr-2 h-4 w-4" />
-            Customer Management
+          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-700">
+            <Users className="h-5 w-5 mr-3" /> Users
           </Button>
-
-          <Button
-            variant={activeTab === "artists" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "artists" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("artists")}
-          >
-            <Inbox className="mr-2 h-4 w-4" />
-            Artist & Label Management
+          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-700">
+            <Music className="h-5 w-5 mr-3" /> Artists
           </Button>
-
-          <Button
-            variant={activeTab === "payouts" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "payouts" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("payouts")}
-          >
-            <CreditCard className="mr-2 h-4 w-4" />
-            Wallet & Payout Management
+          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-700">
+            <DollarSign className="h-5 w-5 mr-3" /> Payments
           </Button>
-
-          <h3 className="text-xs uppercase text-gray-500 font-semibold tracking-wider mb-2 mt-6">
-            Requests
-          </h3>
-
-          <Button
-            variant={activeTab === "copyright" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "copyright" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("copyright")}
-          >
-            <Ban className="mr-2 h-4 w-4" />
-            Copyright Removal
+          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-700">
+            <Shield className="h-5 w-5 mr-3" /> OAC Requests
           </Button>
-
-          <Button
-            variant={activeTab === "oac" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "oac" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("oac")}
-          >
-            <Youtube className="mr-2 h-4 w-4" />
-            OAC Requests
+          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-700">
+            <Shield className="h-5 w-5 mr-3" /> Takedowns
           </Button>
-
-          <h3 className="text-xs uppercase text-gray-500 font-semibold tracking-wider mb-2 mt-6">
-            System
-          </h3>
-
-          <Button
-            variant={activeTab === "reports" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "reports" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("reports")}
-          >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            Royalty Report Upload
+          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-700">
+            <Globe className="h-5 w-5 mr-3" /> Platforms
           </Button>
-
-          <Button
-            variant={activeTab === "platforms" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "platforms" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("platforms")}
-          >
-            <Database className="mr-2 h-4 w-4" />
-            Platform Management
+          <Button variant="ghost" className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-700">
+            <Settings className="h-5 w-5 mr-3" /> Settings
           </Button>
+        </nav>
 
-          <Button
-            variant={activeTab === "settings" ? "secondary" : "ghost"} 
-            className={`w-full justify-start ${activeTab === "settings" ? "bg-gray-800" : "hover:bg-gray-800"} text-left`}
-            onClick={() => setActiveTab("settings")}
+        <div className="absolute bottom-4 left-4 right-4">
+          <Button 
+            variant="outline" 
+            className="w-full border-gray-600 text-gray-400 hover:text-white"
+            onClick={() => signOut()}
           >
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
-        </div>
-
-        <div className="pt-4 mt-8 border-t border-gray-800">
-          <div className="flex items-center mb-4">
-            <div className="bg-red-600 rounded-full w-8 h-8 flex items-center justify-center mr-2">
-              <span className="font-medium">A</span>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Admin User</p>
-              <p className="text-xs text-gray-400">admin@mdi.in</p>
-            </div>
-          </div>
-          
-          <Button variant="outline" className="w-full border-gray-700 hover:bg-gray-800">
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
+            Sign Out
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 md:p-8 bg-gray-950 overflow-y-auto">
-        {renderContent()}
-      </div>
-    </div>
-  );
-};
-
-// Admin Overview Component
-const AdminOverview = () => {
-  return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-          Admin Dashboard
-        </h1>
-        <div className="flex space-x-2">
-          <Button size="icon" variant="ghost" className="rounded-full text-gray-400 hover:text-white">
-            <Bell size={18} />
-          </Button>
-          <Button size="icon" variant="ghost" className="rounded-full text-gray-400 hover:text-white">
-            <User size={18} />
-          </Button>
+      <div className="lg:ml-64 p-6">
+        <header className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+          <div className="text-sm text-gray-400">
+            Welcome, Admin
+          </div>
+        </header>
+        
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Total Users</p>
+                  <h3 className="text-3xl font-bold text-white">{stats.totalUsers}</h3>
+                </div>
+                <Users className="h-8 w-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Total Artists</p>
+                  <h3 className="text-3xl font-bold text-white">{stats.totalArtists}</h3>
+                </div>
+                <Music className="h-8 w-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Total Releases</p>
+                  <h3 className="text-3xl font-bold text-white">{stats.totalReleases}</h3>
+                </div>
+                <FileText className="h-8 w-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Labels</p>
+                  <h3 className="text-3xl font-bold text-white">{stats.totalLabels}</h3>
+                </div>
+                <Globe className="h-8 w-8 text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard 
-          title="Total Customers" 
-          value="248" 
-          description="Active users"
-          icon={<Users className="h-8 w-8 text-blue-500" />}
-        />
-        <StatsCard 
-          title="Pending Reviews" 
-          value="42" 
-          description="Music submissions"
-          icon={<Music className="h-8 w-8 text-purple-500" />}
-        />
-        <StatsCard 
-          title="Withdrawal Requests" 
-          value="18" 
-          description="Pending payouts"
-          icon={<CreditCard className="h-8 w-8 text-green-500" />}
-        />
-        <StatsCard 
-          title="Total Releases" 
-          value="1,254" 
-          description="Across all platforms"
-          icon={<FileText className="h-8 w-8 text-orange-500" />}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-gray-900 border-gray-800 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-white text-xl flex items-center justify-between">
-              <span>Recent Music Submissions</span>
-              <Badge value="42" />
-            </CardTitle>
-            <CardDescription className="text-gray-400">Music awaiting review</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { title: "Sunshine Boulevard", artist: "Summer Beats", status: "Pending", time: "2 hours ago" },
-                { title: "Moonlight Sonata Remix", artist: "DJ Classical", status: "Pending", time: "5 hours ago" },
-                { title: "Urban Echoes", artist: "City Sounds", status: "Pending", time: "1 day ago" }
-              ].map((submission, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 bg-gray-700 rounded-md flex items-center justify-center">
-                      <Music className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="font-medium text-white">{submission.title}</p>
-                      <p className="text-sm text-gray-400">{submission.artist}</p>
-                    </div>
+        
+        {/* Pending Items */}
+        <h2 className="text-xl font-bold mb-4">Pending Approvals</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg text-white">Releases</CardTitle>
+              <CardDescription className="text-gray-400">New releases waiting for approval</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold text-white">{stats.pendingReleases}</span>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                  Review
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg text-white">Withdrawals</CardTitle>
+              <CardDescription className="text-gray-400">Withdrawal requests pending</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold text-white">{stats.totalWithdrawals}</span>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                  Review
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg text-white">OAC Requests</CardTitle>
+              <CardDescription className="text-gray-400">Official Artist Channel requests</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold text-white">{stats.totalOacRequests}</span>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                  Review
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Recent Activity */}
+        <h2 className="text-xl font-bold mb-4">Recent Activity</h2>
+        <Card className="bg-gray-800 border-gray-700 mb-8">
+          <CardContent className="p-0">
+            <div className="divide-y divide-gray-700">
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center mr-3">
+                    <FileText className="h-5 w-5 text-white" />
                   </div>
-                  <div className="text-right">
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-900 text-yellow-400">
-                      {submission.status}
-                    </span>
-                    <p className="text-xs text-gray-500 mt-1">{submission.time}</p>
+                  <div>
+                    <h4 className="font-semibold text-white">New Release Submitted</h4>
+                    <p className="text-sm text-gray-400">Artist submitted a new single</p>
                   </div>
                 </div>
-              ))}
-            </div>
-            <Button variant="link" className="w-full mt-4 text-red-400 hover:text-red-300">
-              View All Submissions
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gray-900 border-gray-800 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-white text-xl flex items-center justify-between">
-              <span>Pending Requests</span>
-              <div className="flex gap-2">
-                <Badge value="18" color="green" />
-                <Badge value="12" color="purple" />
-                <Badge value="8" color="orange" />
+                <span className="text-sm text-gray-400">2 mins ago</span>
               </div>
-            </CardTitle>
-            <CardDescription className="text-gray-400">Awaiting administrator action</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <RequestItem 
-                title="Withdrawal Request" 
-                description="₹12,500 to UPI ID" 
-                user="Rhythm Records"
-                time="3 hours ago"
-                type="payout"
-              />
-              <RequestItem 
-                title="Copyright Removal" 
-                description="YouTube video takedown request" 
-                user="Beats Production"
-                time="1 day ago"
-                type="copyright"
-              />
-              <RequestItem 
-                title="OAC Request" 
-                description="Official Artist Channel setup" 
-                user="DJ Grooves"
-                time="2 days ago"
-                type="oac"
-              />
+              
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center mr-3">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-white">New User Registration</h4>
+                    <p className="text-sm text-gray-400">New user joined the platform</p>
+                  </div>
+                </div>
+                <span className="text-sm text-gray-400">1 hour ago</span>
+              </div>
+              
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center mr-3">
+                    <DollarSign className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-white">Withdrawal Request</h4>
+                    <p className="text-sm text-gray-400">User requested a withdrawal of ₹2,500</p>
+                  </div>
+                </div>
+                <span className="text-sm text-gray-400">3 hours ago</span>
+              </div>
+              
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">
+                    <Shield className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-white">OAC Request</h4>
+                    <p className="text-sm text-gray-400">Artist requested Official Artist Channel</p>
+                  </div>
+                </div>
+                <span className="text-sm text-gray-400">5 hours ago</span>
+              </div>
             </div>
-            <Button variant="link" className="w-full mt-4 text-red-400 hover:text-red-300">
-              View All Requests
-            </Button>
           </CardContent>
         </Card>
       </div>
-
-      <Card className="bg-gray-900 border-gray-800 shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-white text-xl">Recent Activities</CardTitle>
-          <CardDescription className="text-gray-400">System activities log</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="relative overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-400">
-              <thead className="text-xs uppercase bg-gray-800 text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3 rounded-l-lg">Action</th>
-                  <th scope="col" className="px-6 py-3">User</th>
-                  <th scope="col" className="px-6 py-3">Details</th>
-                  <th scope="col" className="px-6 py-3 rounded-r-lg">Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="bg-gray-800 border-b border-gray-700">
-                  <td className="px-6 py-4 font-medium text-white">Release Approved</td>
-                  <td className="px-6 py-4">Admin</td>
-                  <td className="px-6 py-4">"Sunset Dreams" by Summer Vibes</td>
-                  <td className="px-6 py-4">1 hour ago</td>
-                </tr>
-                <tr className="bg-gray-800 border-b border-gray-700">
-                  <td className="px-6 py-4 font-medium text-white">Payment Processed</td>
-                  <td className="px-6 py-4">Admin</td>
-                  <td className="px-6 py-4">₹8,500 to Moonlight Records</td>
-                  <td className="px-6 py-4">3 hours ago</td>
-                </tr>
-                <tr className="bg-gray-800">
-                  <td className="px-6 py-4 font-medium text-white">New Customer</td>
-                  <td className="px-6 py-4">System</td>
-                  <td className="px-6 py-4">Urban Beats registered</td>
-                  <td className="px-6 py-4">1 day ago</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
-
-// Badge Component
-const Badge = ({ value, color = "yellow" }: { value: string, color?: string }) => {
-  const colorClasses: Record<string, string> = {
-    yellow: "bg-yellow-900 text-yellow-400",
-    green: "bg-green-900 text-green-400",
-    purple: "bg-purple-900 text-purple-400",
-    orange: "bg-orange-900 text-orange-400",
-  };
-  
-  return (
-    <span className={`${colorClasses[color]} text-xs font-medium px-2.5 py-1 rounded-full`}>
-      {value}
-    </span>
-  );
-};
-
-// Stats Card Component
-const StatsCard = ({ title, value, description, icon }: { 
-  title: string; 
-  value: string; 
-  description: string; 
-  icon: React.ReactNode;
-}) => {
-  return (
-    <Card className="bg-gray-900 border-gray-800 shadow-lg">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-400">{title}</p>
-            <p className="text-2xl font-bold text-white mt-1">{value}</p>
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
-          </div>
-          <div className="bg-gray-800 p-3 rounded-lg">
-            {icon}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Request Item Component
-const RequestItem = ({ title, description, user, time, type }: {
-  title: string;
-  description: string;
-  user: string;
-  time: string;
-  type: 'payout' | 'copyright' | 'oac';
-}) => {
-  const icons = {
-    payout: <CreditCard className="h-6 w-6 text-green-400" />,
-    copyright: <Ban className="h-6 w-6 text-red-400" />,
-    oac: <Youtube className="h-6 w-6 text-purple-400" />
-  };
-  
-  return (
-    <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
-      <div className="flex items-center">
-        <div className="w-12 h-12 bg-gray-700 rounded-md flex items-center justify-center">
-          {icons[type]}
-        </div>
-        <div className="ml-4">
-          <p className="font-medium text-white">{title}</p>
-          <p className="text-sm text-gray-400">{description}</p>
-          <p className="text-xs text-gray-500">By {user}</p>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className="text-xs text-gray-500">{time}</p>
-        <Button variant="outline" size="sm" className="mt-1 h-7 border-gray-700 hover:bg-gray-700">
-          Review
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-// Placeholder components for different sections
-const MusicManagement = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      Music Management
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Music review and management interface will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const CustomerManagement = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      Customer Management
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Customer management interface will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const ArtistLabelManagement = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      Artist & Label Management
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Artist and label management interface will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const PayoutManagement = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      Wallet & Payout Management
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Wallet and payout management interface will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const CopyrightRequests = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      Copyright Removal Requests
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Copyright removal request management interface will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const OACRequests = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      OAC Requests
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Official Artist Channel request management interface will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const RoyaltyReportUpload = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      Royalty Report Upload
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Royalty report upload interface will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const PlatformManagement = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      Platform Management
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Distribution platform management interface will be implemented here.</p>
-    </div>
-  </div>
-);
-
-const AdminSettings = () => (
-  <div>
-    <h1 className="text-2xl md:text-3xl font-bold mb-8 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-      Settings
-    </h1>
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <p className="text-gray-400">Admin settings interface will be implemented here.</p>
-    </div>
-  </div>
-);
 
 export default AdminDashboard;
