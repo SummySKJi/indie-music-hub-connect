@@ -74,6 +74,7 @@ const App = () => (
               } />
               
               {/* Admin routes */}
+              <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={
                 <ProtectedRoute requireAdmin={true}>

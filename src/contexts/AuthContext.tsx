@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Check if user is admin
         if (session?.user) {
           setTimeout(() => {
-            checkUserRole(session.user.id);
+            checkUserRole(session.user);
           }, 0);
         } else {
           setIsAdmin(false);
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkUserRole(session.user.id);
+        checkUserRole(session.user);
       }
       
       setLoading(false);
@@ -68,18 +68,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const checkUserRole = async (userId: string) => {
+  const checkUserRole = async (authUser: User) => {
     try {
-      // For development purposes, using hardcoded values
-      // In production, this would be replaced with actual database queries
+      // Enhanced admin email checking with multiple domains
+      const adminEmails = [
+        'admin@example.com', 
+        'admin@inddistribution.com',
+        'admin@mdi.in',
+        'summyji07@gmail.com' // Development admin
+      ];
       
-      // Example email addresses that would be treated as admins
-      const adminEmails = ['admin@example.com', 'admin@inddistribution.com'];
-      
-      if (user && adminEmails.includes(user.email || '')) {
+      if (authUser && adminEmails.includes(authUser.email || '')) {
         setIsAdmin(true);
+        console.log("Admin access granted for:", authUser.email);
       } else {
         setIsAdmin(false);
+        console.log("Regular user access for:", authUser.email);
       }
       
       // Once your database tables are properly set up, you can uncomment this code:
@@ -87,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
+        .eq('user_id', authUser.id)
         .eq('role', 'admin')
         .single();
       
@@ -172,6 +176,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setIsAdmin(false);
     navigate("/login");
     toast({
       title: "Logged Out",
