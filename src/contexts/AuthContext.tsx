@@ -75,6 +75,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         'admin@example.com', 
         'admin@inddistribution.com',
         'admin@mdi.in',
+        'Admin@mdi.in', // Added the exact admin email you provided
         'summyji07@gmail.com' // Development admin
       ];
       
