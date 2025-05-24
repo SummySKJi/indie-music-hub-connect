@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -39,6 +38,7 @@ const MyReleases = () => {
         const typedReleases: Release[] = data.map(release => ({
           ...release,
           type: release.type as 'single' | 'album' | 'ep',
+          status: release.status as 'pending' | 'approved' | 'rejected' | 'live' | 'takedown_requested' | 'takedown_completed',
           artists: release.artists as any,
           labels: release.labels as any
         }));

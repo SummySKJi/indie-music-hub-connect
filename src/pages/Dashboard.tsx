@@ -42,7 +42,8 @@ const Dashboard = () => {
         // Type cast the data to match our Release interface
         const typedReleases: Release[] = releasesData.map(release => ({
           ...release,
-          type: release.type as 'single' | 'album' | 'ep'
+          type: release.type as 'single' | 'album' | 'ep',
+          status: release.status as 'pending' | 'approved' | 'rejected' | 'live' | 'takedown_requested' | 'takedown_completed'
         }));
         setRecentReleases(typedReleases);
       }

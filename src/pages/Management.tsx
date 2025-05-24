@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Edit, Trash2, Music, Building2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Music, Building2, User, Globe } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Artist, MusicLabel, INDIAN_LANGUAGES, MUSIC_GENRES } from "@/types/custom";
@@ -203,13 +203,42 @@ const Management = () => {
   };
 
   const editArtist = (artist: Artist) => {
-    setArtistForm(artist);
+    setArtistForm({
+      name: artist.name,
+      email: artist.email,
+      phone: artist.phone,
+      whatsapp: artist.whatsapp || '',
+      website: artist.website || '',
+      gender: artist.gender || '',
+      youtube_channel: artist.youtube_channel || '',
+      instagram_id: artist.instagram_id || '',
+      facebook_page: artist.facebook_page || '',
+      bio: artist.bio || '',
+      spotify_profile: artist.spotify_profile || '',
+      apple_music_profile: artist.apple_music_profile || '',
+      country: artist.country,
+      genres: artist.genres || [],
+      languages: artist.languages
+    });
     setEditingArtist(artist);
     setShowArtistModal(true);
   };
 
   const editLabel = (label: MusicLabel) => {
-    setLabelForm(label);
+    setLabelForm({
+      name: label.name,
+      email: label.email,
+      phone: label.phone,
+      whatsapp: label.whatsapp || '',
+      website: label.website || '',
+      youtube_channel: label.youtube_channel || '',
+      instagram_id: label.instagram_id || '',
+      facebook_page: label.facebook_page || '',
+      bio: label.bio || '',
+      country: label.country,
+      genres: label.genres || [],
+      languages: label.languages
+    });
     setEditingLabel(label);
     setShowLabelModal(true);
   };
@@ -457,7 +486,7 @@ const Management = () => {
                           <span className="text-gray-400">Languages:</span>
                           <span className="text-white ml-2">{artist.languages.join(', ')}</span>
                         </div>
-                        {artist.genres.length > 0 && (
+                        {artist.genres && artist.genres.length > 0 && (
                           <div>
                             <span className="text-gray-400">Genres:</span>
                             <span className="text-white ml-2">{artist.genres.join(', ')}</span>
@@ -618,7 +647,7 @@ const Management = () => {
                           <span className="text-gray-400">Languages:</span>
                           <span className="text-white ml-2">{label.languages.join(', ')}</span>
                         </div>
-                        {label.genres.length > 0 && (
+                        {label.genres && label.genres.length > 0 && (
                           <div>
                             <span className="text-gray-400">Genres:</span>
                             <span className="text-white ml-2">{label.genres.join(', ')}</span>
