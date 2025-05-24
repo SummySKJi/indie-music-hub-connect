@@ -27,8 +27,8 @@ export interface Artist {
   instagram_id?: string;
   facebook_page?: string;
   bio?: string;
-  spotify_link?: string;
-  apple_music_link?: string;
+  spotify_profile?: string;
+  apple_music_profile?: string;
   country: string;
   genres: string[];
   languages: string[];
@@ -69,10 +69,10 @@ export interface Release {
   language: string;
   release_date: string;
   label_id: string;
-  audio_file: string;
-  cover_art: string;
+  audio_file?: string;
+  cover_art?: string;
   platforms: string[];
-  status: 'pending' | 'approved' | 'rejected' | 'live' | 'takedown';
+  status: 'pending' | 'approved' | 'rejected' | 'live' | 'takedown_requested' | 'takedown_completed';
   admin_notes?: string;
   created_at: string;
   updated_at: string;
@@ -86,25 +86,15 @@ export interface Wallet {
   updated_at: string;
 }
 
-export interface Transaction {
-  id: string;
-  user_id: string;
-  type: 'earning' | 'withdrawal';
-  amount: number;
-  description?: string;
-  status: 'pending' | 'completed' | 'rejected';
-  payment_details?: Record<string, any>;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface WithdrawalRequest {
   id: string;
   user_id: string;
   amount: number;
-  payment_method: 'upi' | 'bank_transfer';
-  payment_details: Record<string, any>;
-  status: 'pending' | 'processed' | 'rejected';
+  upi_id?: string;
+  bank_account_number?: string;
+  bank_ifsc?: string;
+  bank_account_holder?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'paid';
   admin_notes?: string;
   created_at: string;
   updated_at: string;
@@ -114,7 +104,7 @@ export interface TakedownRequest {
   id: string;
   user_id: string;
   release_id: string;
-  youtube_link: string;
+  youtube_video_link: string;
   label_id: string;
   status: 'pending' | 'in_process' | 'approved' | 'rejected' | 'completed';
   admin_notes?: string;
@@ -126,7 +116,7 @@ export interface OACRequest {
   id: string;
   user_id: string;
   artist_id: string;
-  channel_link: string;
+  singer_channel_link: string;
   topic_channel_link: string;
   label_id: string;
   status: 'pending' | 'in_process' | 'approved' | 'rejected' | 'completed';
@@ -139,20 +129,38 @@ export interface RoyaltyReport {
   id: string;
   user_id: string;
   report_period: string;
-  report_file: string;
+  file_path: string;
   file_type: 'pdf' | 'csv' | 'xml' | 'xlsx';
+  upload_date: string;
   created_at: string;
-  uploaded_by: string;
 }
 
-export interface DistributionPlatform {
+export interface UserRole {
   id: string;
-  name: string;
-  description?: string;
-  logo?: string;
-  is_active: boolean;
+  user_id: string;
+  role: 'admin' | 'user';
   created_at: string;
-  updated_at: string;
 }
 
-export type UserRole = 'admin' | 'user';
+export const INDIAN_LANGUAGES = [
+  'Hindi', 'English', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Gujarati', 'Urdu',
+  'Kannada', 'Odia', 'Malayalam', 'Punjabi', 'Assamese', 'Maithili', 'Sanskrit',
+  'Nepali', 'Konkani', 'Manipuri', 'Sindhi', 'Dogri', 'Kashmiri', 'Santhali',
+  'Bodo', 'Rajasthani', 'Haryanvi', 'Bhojpuri', 'Awadhi', 'Magahi', 'Bajjika'
+];
+
+export const MUSIC_GENRES = [
+  'Pop', 'Rock', 'Hip Hop', 'Electronic', 'Classical', 'Jazz', 'Blues', 'Country',
+  'Folk', 'R&B', 'Reggae', 'Punk', 'Metal', 'Alternative', 'Indie', 'Bollywood',
+  'Devotional', 'Sufi', 'Qawwali', 'Ghazal', 'Thumri', 'Bhajan', 'Kirtan',
+  'Fusion', 'World Music', 'Instrumental', 'Ambient', 'Lofi', 'Trap', 'Drill'
+];
+
+export const DISTRIBUTION_PLATFORMS = [
+  'Spotify', 'Apple Music', 'YouTube Music', 'Amazon Music', 'JioSaavn', 'Gaana',
+  'Wynk Music', 'Hungama Music', 'Resso', 'Instagram', 'Facebook', 'TikTok',
+  'Deezer', 'Tidal', 'SoundCloud', 'Bandcamp', 'Pandora', 'iHeartRadio',
+  'Shazam', 'Anghami', 'Boomplay', 'NetEase', 'QQ Music', 'Kuwo', 'KuGou',
+  'Audiomack', 'Napster', 'Yandex Music', 'VK Music', 'MelOn', 'Bugs',
+  'Genie Music', 'Line Music', 'AWA', 'Rakuten Music', 'mora', 'Recochoku'
+];

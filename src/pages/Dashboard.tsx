@@ -23,120 +23,6 @@ const Dashboard = () => {
       if (!user) return;
       
       try {
-        // For development purposes, using mock data
-        // In production, these would be replaced with actual database queries
-        
-        // Mock profile data
-        const mockProfile: UserProfile = {
-          id: user.id,
-          full_name: user.user_metadata?.full_name || 'User',
-          email: user.email || '',
-          phone: null,
-          whatsapp: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        setProfile(mockProfile);
-
-        // Mock wallet data
-        const mockWallet: Wallet = {
-          id: '1',
-          user_id: user.id,
-          balance: 5000,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        setWallet(mockWallet);
-
-        // Mock releases data
-        const mockReleases: Release[] = [
-          {
-            id: '1',
-            user_id: user.id,
-            type: 'single',
-            song_name: 'Summer Vibes',
-            artist_id: '1',
-            lyrics_name: ['Summer Lyrics'],
-            copyright: 'Copyright 2025',
-            language: 'English',
-            release_date: new Date().toISOString(),
-            label_id: '1',
-            audio_file: 'audio1.mp3',
-            cover_art: null,
-            platforms: ['Spotify', 'Apple Music'],
-            status: 'pending',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            user_id: user.id,
-            type: 'album',
-            song_name: 'Winter Chill',
-            artist_id: '2',
-            lyrics_name: ['Winter Lyrics'],
-            copyright: 'Copyright 2025',
-            language: 'English',
-            release_date: new Date().toISOString(),
-            label_id: '1',
-            audio_file: 'audio2.mp3',
-            cover_art: null,
-            platforms: ['Spotify', 'Apple Music'],
-            status: 'approved',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ];
-        setReleases(mockReleases);
-
-        // Mock artists data
-        const mockArtists: Artist[] = [
-          {
-            id: '1',
-            user_id: user.id,
-            name: 'DJ Cool',
-            email: 'dj@example.com',
-            phone: '1234567890',
-            country: 'India',
-            genres: ['Electronic', 'Pop'],
-            languages: ['English', 'Hindi'],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            user_id: user.id,
-            name: 'Ice Beats',
-            email: 'ice@example.com',
-            phone: '0987654321',
-            country: 'India',
-            genres: ['Hip Hop', 'Rap'],
-            languages: ['English', 'Hindi'],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ];
-        setArtists(mockArtists);
-
-        // Mock labels data
-        const mockLabels: Label[] = [
-          {
-            id: '1',
-            user_id: user.id,
-            name: 'Cool Records',
-            email: 'cool@example.com',
-            phone: '1234567890',
-            country: 'India',
-            genres: ['Electronic', 'Pop'],
-            languages: ['English', 'Hindi'],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ];
-        setLabels(mockLabels);
-
-        // Once your database tables are properly set up, you can uncomment these queries:
-        /*
         // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -154,7 +40,7 @@ const Dashboard = () => {
           .eq('user_id', user.id)
           .single();
         
-        if (!walletError) {
+        if (!walletError && walletData) {
           setWallet(walletData);
         }
 
@@ -191,12 +77,6 @@ const Dashboard = () => {
           setLabels(labelsData);
         }
 
-        // If wallet doesn't exist, create one
-        if (!walletData && !walletError?.message.includes('Results contain 0 rows')) {
-          await supabase.from('wallet').insert([{ user_id: user.id, balance: 0 }]);
-        }
-        */
-
       } catch (error: any) {
         console.error('Error fetching dashboard data:', error);
         toast({
@@ -211,35 +91,6 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, [user]);
-
-  // Function handlers for button clicks
-  const handleCreateRelease = () => {
-    toast({
-      title: "Create Release",
-      description: "Create release feature will be available soon.",
-    });
-  };
-
-  const handleAddArtist = () => {
-    toast({
-      title: "Add Artist",
-      description: "Add artist feature will be available soon.",
-    });
-  };
-
-  const handleRequestOAC = () => {
-    toast({
-      title: "Request OAC",
-      description: "OAC request feature will be available soon.",
-    });
-  };
-
-  const handleViewAnalytics = () => {
-    toast({
-      title: "View Analytics",
-      description: "Analytics feature will be available soon.",
-    });
-  };
 
   if (loading) {
     return (
@@ -321,30 +172,26 @@ const Dashboard = () => {
       <div className="mb-8">
         <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <Button 
-            className="py-6 bg-purple-800 hover:bg-purple-700 flex items-center justify-center gap-2"
-            onClick={handleCreateRelease}
-          >
-            <Plus className="h-5 w-5" /> New Release
-          </Button>
-          <Button 
-            className="py-6 bg-blue-800 hover:bg-blue-700 flex items-center justify-center gap-2"
-            onClick={handleAddArtist}
-          >
-            <User className="h-5 w-5" /> Add Artist
-          </Button>
-          <Button 
-            className="py-6 bg-green-800 hover:bg-green-700 flex items-center justify-center gap-2"
-            onClick={handleRequestOAC}
-          >
-            <Shield className="h-5 w-5" /> Request OAC
-          </Button>
-          <Button 
-            className="py-6 bg-orange-800 hover:bg-orange-700 flex items-center justify-center gap-2"
-            onClick={handleViewAnalytics}
-          >
-            <BarChart2 className="h-5 w-5" /> View Analytics
-          </Button>
+          <Link to="/upload-music">
+            <Button className="py-6 bg-purple-800 hover:bg-purple-700 flex items-center justify-center gap-2 w-full">
+              <Plus className="h-5 w-5" /> Upload Music
+            </Button>
+          </Link>
+          <Link to="/management">
+            <Button className="py-6 bg-blue-800 hover:bg-blue-700 flex items-center justify-center gap-2 w-full">
+              <User className="h-5 w-5" /> Manage Artists
+            </Button>
+          </Link>
+          <Link to="/oac-request">
+            <Button className="py-6 bg-green-800 hover:bg-green-700 flex items-center justify-center gap-2 w-full">
+              <Shield className="h-5 w-5" /> Request OAC
+            </Button>
+          </Link>
+          <Link to="/wallet">
+            <Button className="py-6 bg-orange-800 hover:bg-orange-700 flex items-center justify-center gap-2 w-full">
+              <BarChart2 className="h-5 w-5" /> View Wallet
+            </Button>
+          </Link>
         </div>
       </div>
       
@@ -352,12 +199,11 @@ const Dashboard = () => {
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white">Recent Releases</h2>
-          <Button 
-            variant="outline" 
-            className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white"
-          >
-            View All
-          </Button>
+          <Link to="/my-releases">
+            <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
+              View All
+            </Button>
+          </Link>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -390,8 +236,9 @@ const Dashboard = () => {
                 <CardContent>
                   <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     release.status === 'approved' ? 'bg-green-900 text-green-300' : 
+                    release.status === 'live' ? 'bg-blue-900 text-blue-300' :
                     release.status === 'pending' ? 'bg-yellow-900 text-yellow-300' : 
-                    'bg-gray-700 text-white'
+                    'bg-red-900 text-red-300'
                   }`}>
                     {release.status.toUpperCase()}
                   </div>
@@ -401,10 +248,12 @@ const Dashboard = () => {
           ) : (
             <div className="col-span-3 text-center py-8 bg-gray-800 rounded-lg border border-gray-700">
               <Music className="h-12 w-12 text-gray-500 mx-auto mb-3" />
-              <p className="text-gray-400">No releases yet. Create your first release!</p>
-              <Button className="mt-4 bg-purple-600 hover:bg-purple-700" onClick={handleCreateRelease}>
-                <Plus className="h-4 w-4 mr-2" /> Create Release
-              </Button>
+              <p className="text-gray-400">No releases yet. Upload your first track!</p>
+              <Link to="/upload-music">
+                <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+                  <Plus className="h-4 w-4 mr-2" /> Upload Music
+                </Button>
+              </Link>
             </div>
           )}
         </div>
@@ -415,9 +264,11 @@ const Dashboard = () => {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-white">Your Artists</h2>
-            <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
-              View All
-            </Button>
+            <Link to="/management">
+              <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
+                View All
+              </Button>
+            </Link>
           </div>
           
           <Card className="bg-gray-800 border-gray-700">
@@ -439,9 +290,11 @@ const Dashboard = () => {
               <CardContent className="text-center py-8">
                 <User className="h-12 w-12 text-gray-500 mx-auto mb-3" />
                 <p className="text-gray-400">No artists added yet.</p>
-                <Button className="mt-4 bg-purple-600 hover:bg-purple-700" onClick={handleAddArtist}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Artist
-                </Button>
+                <Link to="/management">
+                  <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+                    <Plus className="h-4 w-4 mr-2" /> Add Artist
+                  </Button>
+                </Link>
               </CardContent>
             )}
           </Card>
@@ -450,9 +303,11 @@ const Dashboard = () => {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-white">Your Labels</h2>
-            <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
-              View All
-            </Button>
+            <Link to="/management">
+              <Button variant="outline" className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white">
+                View All
+              </Button>
+            </Link>
           </div>
           
           <Card className="bg-gray-800 border-gray-700">
@@ -474,9 +329,11 @@ const Dashboard = () => {
               <CardContent className="text-center py-8">
                 <Globe className="h-12 w-12 text-gray-500 mx-auto mb-3" />
                 <p className="text-gray-400">No labels added yet.</p>
-                <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
-                  <Plus className="h-4 w-4 mr-2" /> Add Label
-                </Button>
+                <Link to="/management">
+                  <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+                    <Plus className="h-4 w-4 mr-2" /> Add Label
+                  </Button>
+                </Link>
               </CardContent>
             )}
           </Card>
