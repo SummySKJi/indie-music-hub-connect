@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Music } from "lucide-react";
+import { Eye, EyeOff, Music, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
@@ -100,6 +100,26 @@ const Login = () => {
                 {isSubmitting ? "Signing In..." : "Sign In"}
               </Button>
             </form>
+
+            {/* Admin Login Section */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-gray-800 px-2 text-gray-400">Or</span>
+              </div>
+            </div>
+
+            <Link to="/admin/login">
+              <Button
+                variant="outline"
+                className="w-full bg-gray-700 border-red-600 text-red-400 hover:bg-red-900 hover:text-white hover:border-red-500 transition-all duration-200"
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Admin Login
+              </Button>
+            </Link>
 
             <div className="text-center">
               <span className="text-gray-400">Don't have an account? </span>
