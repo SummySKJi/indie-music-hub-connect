@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -12,14 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Upload, Play, Pause, X, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Artist, Label, INDIAN_LANGUAGES, DISTRIBUTION_PLATFORMS } from "@/types/custom";
+import { Artist, MusicLabel, INDIAN_LANGUAGES, DISTRIBUTION_PLATFORMS } from "@/types/custom";
 
 const UploadMusic = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [labels, setLabels] = useState<Label[]>([]);
+  const [labels, setLabels] = useState<MusicLabel[]>([]);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverArt, setCoverArt] = useState<File | null>(null);
   const [audioPreview, setAudioPreview] = useState<HTMLAudioElement | null>(null);

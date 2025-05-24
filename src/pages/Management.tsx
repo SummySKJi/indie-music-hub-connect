@@ -7,22 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, User, Globe, Plus, Edit, Trash2 } from "lucide-react";
-import { Artist, Label, INDIAN_LANGUAGES, MUSIC_GENRES } from "@/types/custom";
-import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, Plus, Edit, Trash2, Music, Building2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Artist, MusicLabel, INDIAN_LANGUAGES, MUSIC_GENRES } from "@/types/custom";
 
 const Management = () => {
   const { user } = useAuth();
   const [artists, setArtists] = useState<Artist[]>([]);
-  const [labels, setLabels] = useState<Label[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [labels, setLabels] = useState<MusicLabel[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showArtistModal, setShowArtistModal] = useState(false);
   const [showLabelModal, setShowLabelModal] = useState(false);
   const [editingArtist, setEditingArtist] = useState<Artist | null>(null);
-  const [editingLabel, setEditingLabel] = useState<Label | null>(null);
+  const [editingLabel, setEditingLabel] = useState<MusicLabel | null>(null);
 
   const [artistForm, setArtistForm] = useState({
     name: '',
@@ -209,7 +208,7 @@ const Management = () => {
     setShowArtistModal(true);
   };
 
-  const editLabel = (label: Label) => {
+  const editLabel = (label: MusicLabel) => {
     setLabelForm(label);
     setEditingLabel(label);
     setShowLabelModal(true);
@@ -272,7 +271,7 @@ const Management = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/dashboard">
             <Button variant="outline" size="icon" className="text-white border-gray-600">
@@ -281,22 +280,27 @@ const Management = () => {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-white">Management</h1>
-            <p className="text-gray-400">Manage your artists and labels</p>
+            <p className="text-gray-400">Manage your artists and music labels</p>
           </div>
         </div>
 
-        <Tabs defaultValue="artists" className="space-y-6">
-          <TabsList className="bg-gray-800 border-gray-700">
-            <TabsTrigger value="artists" className="data-[state=active]:bg-purple-600">Artists</TabsTrigger>
-            <TabsTrigger value="labels" className="data-[state=active]:bg-purple-600">Labels</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="artists">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Artists ({artists.length})</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Artists Section */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Music className="h-6 w-6" />
+                Artists
+              </h2>
               <Dialog open={showArtistModal} onOpenChange={setShowArtistModal}>
                 <DialogTrigger asChild>
-                  <Button onClick={resetArtistForm} className="bg-purple-600 hover:bg-purple-700">
+                  <Button 
+                    onClick={() => {
+                      setEditingArtist(null);
+                      resetArtistForm();
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
                     <Plus className="h-4 w-4 mr-2" /> Add Artist
                   </Button>
                 </DialogTrigger>
@@ -465,14 +469,24 @@ const Management = () => {
                 ))}
               </div>
             )}
-          </TabsContent>
+          </div>
 
-          <TabsContent value="labels">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Labels ({labels.length})</h2>
+          {/* Labels Section */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Building2 className="h-6 w-6" />
+                Music Labels
+              </h2>
               <Dialog open={showLabelModal} onOpenChange={setShowLabelModal}>
                 <DialogTrigger asChild>
-                  <Button onClick={resetLabelForm} className="bg-purple-600 hover:bg-purple-700">
+                  <Button 
+                    onClick={() => {
+                      setEditingLabel(null);
+                      resetLabelForm();
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
                     <Plus className="h-4 w-4 mr-2" /> Add Label
                   </Button>
                 </DialogTrigger>
@@ -616,8 +630,8 @@ const Management = () => {
                 ))}
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
