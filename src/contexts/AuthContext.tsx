@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,37 +32,55 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("Setting up auth state listener");
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state change:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         
-        // Check if user is admin
+        // Check if user is admin when session changes
         if (session?.user) {
-          setTimeout(() => {
-            checkUserRole(session.user);
-          }, 0);
+          console.log("Checking admin status for user:", session.user.email);
+          await checkUserRole(session.user);
         } else {
+          console.log("No user session, resetting admin status");
           setIsAdmin(false);
         }
+        
+        setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session check:", session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        checkUserRole(session.user);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          setLoading(false);
+          return;
+        }
+
+        console.log("Initial session check:", session?.user?.email);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await checkUserRole(session.user);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setLoading(false);
       }
-      
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();
@@ -74,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log("Checking user role for:", authUser.email);
       
-      // Enhanced admin email checking with multiple domains
+      // Define admin emails
       const adminEmails = [
         'admin@example.com', 
         'admin@inddistribution.com',
@@ -83,29 +100,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         'summyji07@gmail.com' // Development admin
       ];
       
-      if (authUser && adminEmails.includes(authUser.email || '')) {
+      const userEmail = authUser.email?.toLowerCase() || '';
+      const isUserAdmin = adminEmails.some(email => 
+        email.toLowerCase() === userEmail || email === authUser.email
+      );
+      
+      if (isUserAdmin) {
         setIsAdmin(true);
-        console.log("Admin access granted for:", authUser.email);
+        console.log("✅ Admin access granted for:", authUser.email);
       } else {
         setIsAdmin(false);
-        console.log("Regular user access for:", authUser.email);
+        console.log("👤 Regular user access for:", authUser.email);
       }
       
-      // Once your database tables are properly set up, you can uncomment this code:
-      /*
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authUser.id)
-        .eq('role', 'admin')
-        .single();
-      
-      if (data && !error) {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
-      */
     } catch (error) {
       console.error("Error checking user role:", error);
       setIsAdmin(false);
@@ -114,15 +121,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log("Sign in attempt for:", email);
+      console.log("🔐 Sign in attempt for:", email);
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password.trim(),
       });
 
       if (error) {
-        console.error("Sign in error:", error);
+        console.error("❌ Sign in error:", error);
         toast({
           title: "Login Failed",
           description: error.message,
@@ -131,21 +139,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error };
       }
 
-      console.log("Sign in successful for:", email);
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
+      if (data.user) {
+        console.log("✅ Sign in successful for:", email);
+        
+        // Check admin status immediately
+        await checkUserRole(data.user);
+        
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+      }
       
       return { error: null };
     } catch (error: any) {
-      console.error("Sign in exception:", error);
+      console.error("💥 Sign in exception:", error);
       toast({
         title: "Login Failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -185,14 +201,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    console.log("Signing out user");
-    await supabase.auth.signOut();
-    setIsAdmin(false);
-    navigate("/login");
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
+    console.log("🚪 Signing out user");
+    try {
+      await supabase.auth.signOut();
+      setIsAdmin(false);
+      setUser(null);
+      setSession(null);
+      navigate("/login");
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   return (
