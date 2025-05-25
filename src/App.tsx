@@ -24,6 +24,11 @@ import Dashboard from "./pages/Dashboard";
 import UploadMusic from "./pages/UploadMusic";
 import MyReleases from "./pages/MyReleases";
 import Management from "./pages/Management";
+import WalletEarnings from "./pages/customer/WalletEarnings";
+import CopyrightRemoval from "./pages/customer/CopyrightRemoval";
+import RoyaltyReports from "./pages/customer/RoyaltyReports";
+import OacRequests from "./pages/customer/OacRequests";
+import CustomerProfile from "./pages/customer/CustomerProfile";
 
 // Admin pages
 import AdminLogin from "./pages/AdminLogin";
@@ -74,9 +79,34 @@ const App = () => (
                   <MyReleases />
                 </ProtectedRoute>
               } />
+              <Route path="/wallet" element={
+                <ProtectedRoute>
+                  <WalletEarnings />
+                </ProtectedRoute>
+              } />
               <Route path="/management" element={
                 <ProtectedRoute>
                   <Management />
+                </ProtectedRoute>
+              } />
+              <Route path="/copyright-removal" element={
+                <ProtectedRoute>
+                  <CopyrightRemoval />
+                </ProtectedRoute>
+              } />
+              <Route path="/royalty-reports" element={
+                <ProtectedRoute>
+                  <RoyaltyReports />
+                </ProtectedRoute>
+              } />
+              <Route path="/oac-requests" element={
+                <ProtectedRoute>
+                  <OacRequests />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <CustomerProfile />
                 </ProtectedRoute>
               } />
               

@@ -4,9 +4,10 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Music, Calendar, User, Building2, Play, Download } from "lucide-react";
+import { Music, Calendar, User, Building2, Play, Download, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Release } from "@/types/custom";
+import CustomerLayout from "@/components/customer/CustomerLayout";
 
 const MyReleases = () => {
   const { user } = useAuth();
@@ -34,7 +35,6 @@ const MyReleases = () => {
         .order('created_at', { ascending: false });
 
       if (data) {
-        // Type cast and structure the data properly
         const typedReleases: Release[] = data.map(release => ({
           ...release,
           type: release.type as 'single' | 'album' | 'ep',
@@ -73,25 +73,27 @@ const MyReleases = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-lg">Loading your releases...</div>
-      </div>
+      <CustomerLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-white text-lg">Loading your releases...</div>
+        </div>
+      </CustomerLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Link to="/dashboard">
-            <Button variant="outline" size="icon" className="text-white border-gray-600">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+    <CustomerLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">My Releases</h1>
             <p className="text-gray-400">Track and manage your music releases</p>
           </div>
+          <Link to="/upload-music">
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              Upload New Track
+            </Button>
+          </Link>
         </div>
 
         {releases.length === 0 ? (
@@ -184,7 +186,7 @@ const MyReleases = () => {
           </div>
         )}
       </div>
-    </div>
+    </CustomerLayout>
   );
 };
 
