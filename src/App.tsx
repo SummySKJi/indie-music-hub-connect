@@ -39,7 +39,7 @@ import CustomerManagement from "./pages/admin/CustomerManagement";
 import ArtistLabelManagement from "./pages/admin/ArtistLabelManagement";
 import WalletPayouts from "./pages/admin/WalletPayouts";
 import CopyrightRequests from "./pages/admin/CopyrightRequests";
-import OacRequests from "./pages/admin/OacRequests";
+import AdminOacRequests from "./pages/admin/OacRequests";
 
 import NotFound from "./pages/NotFound";
 
@@ -158,7 +158,7 @@ const App = () => (
               } />
               <Route path="/admin/requests/oac" element={
                 <ProtectedRoute requireAdmin={true}>
-                  <OacRequests />
+                  <AdminOacRequests />
                 </ProtectedRoute>
               } />
               
