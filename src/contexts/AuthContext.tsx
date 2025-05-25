@@ -91,19 +91,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log("Checking user role for:", authUser.email);
       
-      // Define admin emails
+      // Define admin emails with the correct credentials
       const adminEmails = [
-        'admin@example.com', 
-        'admin@inddistribution.com',
         'admin@mdi.in',
         'Admin@mdi.in', // The exact admin email provided
-        'summyji07@gmail.com' // Development admin
       ];
       
-      const userEmail = authUser.email?.toLowerCase() || '';
-      const isUserAdmin = adminEmails.some(email => 
-        email.toLowerCase() === userEmail || email === authUser.email
-      );
+      const userEmail = authUser.email || '';
+      const isUserAdmin = adminEmails.includes(userEmail);
       
       if (isUserAdmin) {
         setIsAdmin(true);

@@ -14,7 +14,7 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "Admin@mdi.in",
-    password: "11111111"
+    password: "Nayak77@@"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, user, isAdmin, loading } = useAuth();
@@ -182,9 +182,9 @@ const AdminLogin = () => {
 
             <div className="text-center pt-4 border-t border-gray-800">
               <div className="bg-gray-800 p-4 rounded-lg mb-4">
-                <p className="text-xs text-gray-400 mb-2">Demo Admin Credentials:</p>
+                <p className="text-xs text-gray-400 mb-2">Admin Credentials:</p>
                 <p className="text-sm text-green-400 font-mono">Email: Admin@mdi.in</p>
-                <p className="text-sm text-green-400 font-mono">Password: 11111111</p>
+                <p className="text-sm text-green-400 font-mono">Password: Nayak77@@</p>
               </div>
               <p className="text-xs text-gray-500 mb-3">
                 🔒 Authorized personnel only. All access attempts are logged.

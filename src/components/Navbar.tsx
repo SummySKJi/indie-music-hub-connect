@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Music } from "lucide-react";
+import { Menu, X, Music, Shield } from "lucide-react";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -52,6 +52,12 @@ const Navbar = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            <Link to="/admin/login">
+              <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
+                <Shield className="h-4 w-4 mr-1" />
+                Admin
+              </Button>
+            </Link>
             <Link to="/login">
               <Button variant="ghost" className="text-gray-300 hover:text-white">
                 Login
@@ -95,6 +101,12 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="flex flex-col space-y-2 mt-4 px-3">
+              <Link to="/admin/login">
+                <Button variant="ghost" size="sm" className="w-full text-red-400 hover:text-red-300 justify-start">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Admin Access
+                </Button>
+              </Link>
               <Link to="/login">
                 <Button variant="ghost" className="w-full text-gray-300 hover:text-white">
                   Login

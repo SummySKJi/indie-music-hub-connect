@@ -71,6 +71,20 @@ const Index = () => {
               </Button>
             </Link>
           </div>
+          
+          {/* Admin Access Button */}
+          <div className="mt-8">
+            <Link to="/admin/login">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-200"
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Admin Access
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
