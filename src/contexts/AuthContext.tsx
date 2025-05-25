@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state change:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -70,12 +72,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkUserRole = async (authUser: User) => {
     try {
+      console.log("Checking user role for:", authUser.email);
+      
       // Enhanced admin email checking with multiple domains
       const adminEmails = [
         'admin@example.com', 
         'admin@inddistribution.com',
         'admin@mdi.in',
-        'Admin@mdi.in', // Added the exact admin email you provided
+        'Admin@mdi.in', // The exact admin email provided
         'summyji07@gmail.com' // Development admin
       ];
       
@@ -110,12 +114,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Sign in attempt for:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Sign in error:", error);
         toast({
           title: "Login Failed",
           description: error.message,
@@ -124,6 +131,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { error };
       }
 
+      console.log("Sign in successful for:", email);
       toast({
         title: "Login Successful",
         description: "Welcome back!",
@@ -131,6 +139,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       return { error: null };
     } catch (error: any) {
+      console.error("Sign in exception:", error);
       toast({
         title: "Login Failed",
         description: error.message,
@@ -176,6 +185,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    console.log("Signing out user");
     await supabase.auth.signOut();
     setIsAdmin(false);
     navigate("/login");

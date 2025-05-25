@@ -13,40 +13,71 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "Admin@mdi.in", // Pre-filled with the admin email
+    email: "Admin@mdi.in",
     password: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, user, isAdmin } = useAuth();
+  const { signIn, user, isAdmin, loading } = useAuth();
 
   // Redirect if already logged in as admin
   useEffect(() => {
-    if (user && isAdmin) {
-      navigate("/admin/dashboard");
+    console.log("AdminLogin - Auth state:", { user: !!user, isAdmin, loading });
+    
+    if (!loading && user && isAdmin) {
+      console.log("Redirecting to admin dashboard - user is already admin");
+      navigate("/admin/dashboard", { replace: true });
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Admin login attempt with:", formData.email);
     setIsSubmitting(true);
     
-    const { error } = await signIn(formData.email, formData.password);
-    
-    if (!error) {
-      // Wait a moment for admin status to be checked
-      setTimeout(() => {
-        navigate("/admin/dashboard");
-      }, 500);
-    } else {
+    try {
+      const { error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        console.error("Admin login error:", error);
+        toast({
+          title: "Login Failed",
+          description: error.message || "Invalid credentials",
+          variant: "destructive",
+        });
+      } else {
+        console.log("Admin login successful, checking admin status...");
+        toast({
+          title: "Login Successful", 
+          description: "Checking admin privileges...",
+        });
+        
+        // Wait a moment for admin status to be checked, then redirect
+        setTimeout(() => {
+          navigate("/admin/dashboard", { replace: true });
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.error("Admin login exception:", error);
       toast({
-        title: "Access Denied",
-        description: "Invalid admin credentials or insufficient privileges.",
+        title: "Login Error",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div className="text-center">
+          <div className="animate-spin inline-block w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full mb-4"></div>
+          <p className="text-white">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -148,11 +179,11 @@ const AdminLogin = () => {
                 Authorized personnel only. All access attempts are logged.
               </p>
               <Link 
-                to="/" 
+                to="/login" 
                 className="text-sm text-gray-400 hover:text-white transition-colors flex items-center justify-center space-x-1"
               >
                 <Music className="h-4 w-4" />
-                <span>Return to main site</span>
+                <span>Back to regular login</span>
               </Link>
             </div>
           </CardContent>
