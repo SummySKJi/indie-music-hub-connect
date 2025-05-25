@@ -124,7 +124,6 @@ const AdminLogin = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Admin@mdi.in"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 pl-10 focus:border-red-500 focus:ring-red-500"
@@ -143,7 +142,6 @@ const AdminLogin = () => {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter admin password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 pl-10 pr-10 focus:border-red-500 focus:ring-red-500"
