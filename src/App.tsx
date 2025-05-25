@@ -28,6 +28,13 @@ import Management from "./pages/Management";
 // Admin pages
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import MusicReviewQueue from "./pages/admin/MusicReviewQueue";
+import AllReleases from "./pages/admin/AllReleases";
+import CustomerManagement from "./pages/admin/CustomerManagement";
+import ArtistLabelManagement from "./pages/admin/ArtistLabelManagement";
+import WalletPayouts from "./pages/admin/WalletPayouts";
+import CopyrightRequests from "./pages/admin/CopyrightRequests";
+import OacRequests from "./pages/admin/OacRequests";
 
 import NotFound from "./pages/NotFound";
 
@@ -79,6 +86,49 @@ const App = () => (
               <Route path="/admin/dashboard" element={
                 <ProtectedRoute requireAdmin={true}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Music Management */}
+              <Route path="/admin/music/review-queue" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <MusicReviewQueue />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/music/releases" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AllReleases />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Customer & Artist Management */}
+              <Route path="/admin/customers" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <CustomerManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/artists-labels" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <ArtistLabelManagement />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Financial Management */}
+              <Route path="/admin/wallet-payouts" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <WalletPayouts />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Request Management */}
+              <Route path="/admin/requests/copyright" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <CopyrightRequests />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/requests/oac" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <OacRequests />
                 </ProtectedRoute>
               } />
               
