@@ -48,14 +48,14 @@ const CopyrightRequests = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       pending: "secondary",
       in_process: "outline",
       approved: "default",
       rejected: "destructive",
       completed: "default"
     };
-    return <Badge variant={variants[status as keyof typeof variants]}>{status.replace('_', ' ')}</Badge>;
+    return <Badge variant={variants[status] || "outline"}>{status.replace('_', ' ')}</Badge>;
   };
 
   const filteredRequests = requests.filter(req =>

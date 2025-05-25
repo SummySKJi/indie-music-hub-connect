@@ -46,13 +46,13 @@ const AllReleases = () => {
   ]);
 
   const getStatusBadge = (status: string) => {
-    const variants = {
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       live: "default",
       approved: "secondary", 
       rejected: "destructive",
       pending: "outline"
     };
-    return <Badge variant={variants[status as keyof typeof variants]}>{status}</Badge>;
+    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
   };
 
   const filteredReleases = releases.filter(release =>
