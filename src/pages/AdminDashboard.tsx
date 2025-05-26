@@ -1,13 +1,13 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Music, Users, FileText, BarChart2, DollarSign, Shield, Globe, Settings, AlertCircle, Building2 } from "lucide-react";
+import { Music, Users, FileText, BarChart2, DollarSign, Shield, Globe, Settings, AlertCircle, Building2, Play, Eye, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 
 interface DashboardStats {
   totalUsers: number;
@@ -47,6 +47,7 @@ const AdminDashboard = () => {
     liveReleases: 0
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [recentReleases, setRecentReleases] = useState<any[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -77,7 +78,7 @@ const AdminDashboard = () => {
         walletResult
       ] = await Promise.all([
         supabase.from('profiles').select('id, email, created_at', { count: 'exact' }),
-        supabase.from('releases').select('id, status, created_at, song_name', { count: 'exact' }),
+        supabase.from('releases').select('*', { count: 'exact' }),
         supabase.from('artists').select('id', { count: 'exact' }),
         supabase.from('labels').select('id', { count: 'exact' }),
         supabase.from('withdrawal_requests').select('id, status, amount, created_at', { count: 'exact' }),
@@ -124,6 +125,10 @@ const AdminDashboard = () => {
         liveReleases
       });
 
+      // Get recent releases with artist and user data
+      const recentReleasesWithData = await fetchRecentReleasesWithDetails();
+      setRecentReleases(recentReleasesWithData);
+
       // Generate recent activity from real data
       const activities: RecentActivity[] = [];
       
@@ -144,15 +149,15 @@ const AdminDashboard = () => {
       });
 
       // Recent releases
-      const recentReleases = allReleases
+      const recentReleasesActivity = allReleases
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 3);
       
-      recentReleases.forEach(release => {
+      recentReleasesActivity.forEach(release => {
         activities.push({
           id: release.id,
           type: 'release',
-          title: 'New Release Submitted',
+          title: 'New Music Upload',
           description: `"${release.song_name}" - Status: ${release.status}`,
           timestamp: new Date(release.created_at).toLocaleString()
         });
@@ -216,6 +221,70 @@ const AdminDashboard = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRecentReleasesWithDetails = async () => {
+    try {
+      // Fetch recent releases
+      const { data: releases } = await supabase
+        .from('releases')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (!releases) return [];
+
+      // Fetch related data
+      const [artistsResult, labelsResult, profilesResult] = await Promise.all([
+        supabase.from('artists').select('id, name'),
+        supabase.from('labels').select('id, name'),
+        supabase.from('profiles').select('id, email, full_name')
+      ]);
+
+      // Create lookup maps
+      const artistsMap = new Map();
+      const labelsMap = new Map();
+      const profilesMap = new Map();
+
+      if (artistsResult.data) {
+        artistsResult.data.forEach(artist => {
+          artistsMap.set(artist.id, artist.name);
+        });
+      }
+
+      if (labelsResult.data) {
+        labelsResult.data.forEach(label => {
+          labelsMap.set(label.id, label.name);
+        });
+      }
+
+      if (profilesResult.data) {
+        profilesResult.data.forEach(profile => {
+          profilesMap.set(profile.id, { email: profile.email, name: profile.full_name });
+        });
+      }
+
+      // Transform the data
+      return releases.map(release => ({
+        ...release,
+        artist_name: release.artist_id ? artistsMap.get(release.artist_id) || 'Unknown Artist' : 'Unknown Artist',
+        label_name: release.label_id ? labelsMap.get(release.label_id) || 'Independent' : 'Independent',
+        user_info: release.user_id ? profilesMap.get(release.user_id) || { email: 'Unknown', name: 'Unknown' } : { email: 'Unknown', name: 'Unknown' }
+      }));
+    } catch (error) {
+      console.error('Error fetching recent releases:', error);
+      return [];
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-500';
+      case 'approved': return 'bg-green-500';
+      case 'rejected': return 'bg-red-500';
+      case 'live': return 'bg-blue-500';
+      default: return 'bg-gray-500';
     }
   };
 
@@ -327,6 +396,74 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Uploads Section */}
+        <h2 className="text-xl font-bold text-white mb-4">Recent Music Uploads</h2>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-white">Latest Customer Uploads</CardTitle>
+            <CardDescription className="text-gray-400">
+              Recent music submissions from customers
+            </CardDescription>
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => navigate("/admin/music/all-releases")}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                View All Releases
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {recentReleases.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentReleases.map((release) => (
+                  <Card key={release.id} className="bg-gray-700 border-gray-600">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white truncate">{release.song_name}</h4>
+                          <p className="text-sm text-gray-400">{release.artist_name}</p>
+                          <p className="text-xs text-gray-500">{release.user_info.email}</p>
+                        </div>
+                        <Badge className={`${getStatusColor(release.status)} text-white text-xs`}>
+                          {release.status}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-gray-400 mb-3">
+                        {new Date(release.created_at).toLocaleDateString()}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => navigate("/admin/music/review-queue")}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          Review
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => navigate("/admin/music/all-releases")}
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Manage
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Music className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400">No music uploads yet</p>
+                <p className="text-sm text-gray-500 mt-2">Customer uploads will appear here</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Quick Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
