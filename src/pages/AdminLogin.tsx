@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Music, Lock, User, Shield } from "lucide-react";
@@ -13,8 +12,8 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "Admin@mdi.in",
-    password: "Nayak77@@"
+    email: "super.admin@inddistribution.com",
+    password: "SecureAdmin2024!@#"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, user, isAdmin, loading } = useAuth();
@@ -124,7 +123,7 @@ const AdminLogin = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Admin@mdi.in"
+                    placeholder="super.admin@inddistribution.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 pl-10 focus:border-red-500 focus:ring-red-500"
@@ -182,9 +181,9 @@ const AdminLogin = () => {
 
             <div className="text-center pt-4 border-t border-gray-800">
               <div className="bg-gray-800 p-4 rounded-lg mb-4">
-                <p className="text-xs text-gray-400 mb-2">Admin Credentials:</p>
-                <p className="text-sm text-green-400 font-mono">Email: Admin@mdi.in</p>
-                <p className="text-sm text-green-400 font-mono">Password: Nayak77@@</p>
+                <p className="text-xs text-gray-400 mb-2">New Admin Credentials:</p>
+                <p className="text-sm text-green-400 font-mono">Email: super.admin@inddistribution.com</p>
+                <p className="text-sm text-green-400 font-mono">Password: SecureAdmin2024!@#</p>
               </div>
               <p className="text-xs text-gray-500 mb-3">
                 🔒 Authorized personnel only. All access attempts are logged.

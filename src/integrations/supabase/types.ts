@@ -75,47 +75,6 @@ export type Database = {
         }
         Relationships: []
       }
-      generated_covers: {
-        Row: {
-          cover_path: string
-          created_at: string
-          id: string
-          model_id: string
-          original_song_path: string
-          settings: Json | null
-          title: string
-          user_id: string
-        }
-        Insert: {
-          cover_path: string
-          created_at?: string
-          id?: string
-          model_id: string
-          original_song_path: string
-          settings?: Json | null
-          title: string
-          user_id: string
-        }
-        Update: {
-          cover_path?: string
-          created_at?: string
-          id?: string
-          model_id?: string
-          original_song_path?: string
-          settings?: Json | null
-          title?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "generated_covers_model_id_fkey"
-            columns: ["model_id"]
-            isOneToOne: false
-            referencedRelation: "voice_models"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       labels: {
         Row: {
           bio: string | null
@@ -442,68 +401,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
-      }
-      voice_models: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          quality: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          quality?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          quality?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      voice_samples: {
-        Row: {
-          created_at: string
-          duration: number
-          file_path: string
-          id: string
-          model_id: string
-        }
-        Insert: {
-          created_at?: string
-          duration: number
-          file_path: string
-          id?: string
-          model_id: string
-        }
-        Update: {
-          created_at?: string
-          duration?: number
-          file_path?: string
-          id?: string
-          model_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "voice_samples_model_id_fkey"
-            columns: ["model_id"]
-            isOneToOne: false
-            referencedRelation: "voice_models"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       wallet: {
         Row: {

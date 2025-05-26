@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,10 +92,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log("Checking user role for:", authUser.email);
       
-      // Define admin emails with the correct credentials
+      // Define new admin email
       const adminEmails = [
-        'admin@mdi.in',
-        'Admin@mdi.in', // The exact admin email provided
+        'super.admin@inddistribution.com', // New admin email
       ];
       
       const userEmail = authUser.email || '';
