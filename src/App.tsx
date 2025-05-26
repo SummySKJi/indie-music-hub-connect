@@ -40,6 +40,9 @@ import ArtistLabelManagement from "./pages/admin/ArtistLabelManagement";
 import WalletPayouts from "./pages/admin/WalletPayouts";
 import CopyrightRequests from "./pages/admin/CopyrightRequests";
 import AdminOacRequests from "./pages/admin/OacRequests";
+import PlatformManagement from "./pages/admin/PlatformManagement";
+import AdminRoyaltyReports from "./pages/admin/AdminRoyaltyReports";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 import NotFound from "./pages/NotFound";
 
@@ -159,6 +162,25 @@ const App = () => (
               <Route path="/admin/requests/oac" element={
                 <ProtectedRoute requireAdmin={true}>
                   <AdminOacRequests />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Platform & Reports Management */}
+              <Route path="/admin/platforms" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <PlatformManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/royalty-reports" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminRoyaltyReports />
+                </ProtectedRoute>
+              } />
+              
+              {/* Admin Settings */}
+              <Route path="/admin/settings" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminSettings />
                 </ProtectedRoute>
               } />
               

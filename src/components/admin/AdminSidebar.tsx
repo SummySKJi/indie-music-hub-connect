@@ -66,7 +66,7 @@ const AdminSidebar = () => {
     },
     {
       title: "Royalty Reports",
-      icon: Upload,
+      icon: TrendingUp,
       path: "/admin/royalty-reports",
     },
     {
