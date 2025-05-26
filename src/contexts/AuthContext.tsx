@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Define admin emails with the correct credentials
       const adminEmails = [
-        'musicdistributionindia.in@gmail.com'
+        'super.admin@inddistribution.com'
       ];
       
       const userEmail = authUser.email || '';
