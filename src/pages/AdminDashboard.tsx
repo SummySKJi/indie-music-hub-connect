@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,11 +76,11 @@ const AdminDashboard = () => {
         takedownResult,
         walletResult
       ] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact' }),
-        supabase.from('releases').select('id, status, created_at', { count: 'exact' }),
+        supabase.from('profiles').select('id, email, created_at', { count: 'exact' }),
+        supabase.from('releases').select('id, status, created_at, song_name', { count: 'exact' }),
         supabase.from('artists').select('id', { count: 'exact' }),
         supabase.from('labels').select('id', { count: 'exact' }),
-        supabase.from('withdrawal_requests').select('id, status, amount', { count: 'exact' }),
+        supabase.from('withdrawal_requests').select('id, status, amount, created_at', { count: 'exact' }),
         supabase.from('oac_requests').select('id, status, created_at', { count: 'exact' }),
         supabase.from('takedown_requests').select('id, status, created_at', { count: 'exact' }),
         supabase.from('wallet').select('balance')
@@ -126,6 +127,22 @@ const AdminDashboard = () => {
       // Generate recent activity from real data
       const activities: RecentActivity[] = [];
       
+      // Recent user registrations
+      const recentUsers = (profilesResult.data || [])
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 2);
+      
+      recentUsers.forEach(user => {
+        activities.push({
+          id: user.id,
+          type: 'user',
+          title: 'New User Registration',
+          description: `User registered: ${user.email}`,
+          timestamp: new Date(user.created_at).toLocaleString(),
+          user_email: user.email
+        });
+      });
+
       // Recent releases
       const recentReleases = allReleases
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -136,8 +153,23 @@ const AdminDashboard = () => {
           id: release.id,
           type: 'release',
           title: 'New Release Submitted',
-          description: `Release status: ${release.status}`,
+          description: `"${release.song_name}" - Status: ${release.status}`,
           timestamp: new Date(release.created_at).toLocaleString()
+        });
+      });
+
+      // Recent withdrawal requests
+      const recentWithdrawals = allWithdrawals
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 2);
+      
+      recentWithdrawals.forEach(withdrawal => {
+        activities.push({
+          id: withdrawal.id,
+          type: 'withdrawal',
+          title: 'Withdrawal Request',
+          description: `Amount: ₹${withdrawal.amount} - Status: ${withdrawal.status}`,
+          timestamp: new Date(withdrawal.created_at).toLocaleString()
         });
       });
 
@@ -173,7 +205,7 @@ const AdminDashboard = () => {
 
       // Sort all activities by timestamp
       activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      setRecentActivity(activities.slice(0, 5));
+      setRecentActivity(activities.slice(0, 8));
 
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
@@ -209,13 +241,13 @@ const AdminDashboard = () => {
       case 'release':
         return 'bg-red-600';
       case 'user':
-        return 'bg-orange-600';
+        return 'bg-blue-600';
       case 'withdrawal':
         return 'bg-green-600';
       case 'oac':
-        return 'bg-blue-600';
-      case 'takedown':
         return 'bg-purple-600';
+      case 'takedown':
+        return 'bg-orange-600';
       default:
         return 'bg-gray-600';
     }
@@ -348,7 +380,12 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold text-white">{stats.pendingReleases}</span>
-                <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => navigate("/admin/music/review-queue")}>
+                <Button 
+                  size="sm" 
+                  className="bg-red-600 hover:bg-red-700" 
+                  onClick={() => navigate("/admin/music/review-queue")}
+                  disabled={stats.pendingReleases === 0}
+                >
                   Review
                 </Button>
               </div>
@@ -363,7 +400,12 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold text-white">{stats.pendingWithdrawals}</span>
-                <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => navigate("/admin/wallet-payouts")}>
+                <Button 
+                  size="sm" 
+                  className="bg-red-600 hover:bg-red-700" 
+                  onClick={() => navigate("/admin/wallet-payouts")}
+                  disabled={stats.pendingWithdrawals === 0}
+                >
                   Review
                 </Button>
               </div>
@@ -378,7 +420,12 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold text-white">{stats.pendingOacRequests}</span>
-                <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => navigate("/admin/requests/oac")}>
+                <Button 
+                  size="sm" 
+                  className="bg-red-600 hover:bg-red-700" 
+                  onClick={() => navigate("/admin/requests/oac")}
+                  disabled={stats.pendingOacRequests === 0}
+                >
                   Review
                 </Button>
               </div>
@@ -393,7 +440,12 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold text-white">{stats.pendingTakedownRequests}</span>
-                <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => navigate("/admin/requests/copyright")}>
+                <Button 
+                  size="sm" 
+                  className="bg-red-600 hover:bg-red-700" 
+                  onClick={() => navigate("/admin/requests/copyright")}
+                  disabled={stats.pendingTakedownRequests === 0}
+                >
                   Review
                 </Button>
               </div>
@@ -416,6 +468,9 @@ const AdminDashboard = () => {
                       <div>
                         <h4 className="font-semibold text-white">{activity.title}</h4>
                         <p className="text-sm text-gray-400">{activity.description}</p>
+                        {activity.user_email && (
+                          <p className="text-xs text-gray-500">{activity.user_email}</p>
+                        )}
                       </div>
                     </div>
                     <span className="text-sm text-gray-400">{activity.timestamp}</span>
@@ -425,6 +480,7 @@ const AdminDashboard = () => {
             ) : (
               <div className="p-8 text-center">
                 <p className="text-gray-400">No recent activity found</p>
+                <p className="text-sm text-gray-500 mt-2">Activity will appear here as users interact with the platform</p>
               </div>
             )}
           </CardContent>

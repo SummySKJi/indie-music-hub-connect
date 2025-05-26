@@ -1,10 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
@@ -15,51 +14,226 @@ import {
 import { Search, Check, X, DollarSign, CreditCard, Wallet } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface WithdrawalRequest {
+  id: string;
+  customer_name: string;
+  customer_email: string;
+  amount: number;
+  upi_id?: string;
+  bank_account_number?: string;
+  bank_ifsc?: string;
+  bank_account_holder?: string;
+  created_at: string;
+  status: string;
+  wallet_balance: number;
+}
 
 const WalletPayouts = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [withdrawals, setWithdrawals] = useState([
-    {
-      id: "1",
-      customerName: "Rahul Kumar",
-      email: "rahul@example.com",
-      amount: 2500,
-      upiId: "rahul@paytm",
-      requestDate: "2024-01-20",
-      status: "pending",
-      walletBalance: 5000
-    },
-    {
-      id: "2",
-      customerName: "Priya Sharma", 
-      email: "priya@example.com",
-      amount: 1500,
-      bankAccount: "1234567890",
-      bankIfsc: "HDFC0001234",
-      accountHolder: "Priya Sharma",
-      requestDate: "2024-01-19",
-      status: "pending",
-      walletBalance: 3200
-    }
-  ]);
-
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [balanceUpdate, setBalanceUpdate] = useState({ customerId: "", amount: "" });
 
-  const handleApproval = (id: string, action: "approve" | "reject") => {
-    setWithdrawals(prev => prev.map(w => 
-      w.id === id ? { ...w, status: action === "approve" ? "paid" : "rejected" } : w
-    ));
-    toast({
-      title: action === "approve" ? "Payment Approved" : "Payment Rejected",
-      description: `Withdrawal request has been ${action === "approve" ? "approved" : "rejected"}.`,
-      variant: action === "approve" ? "default" : "destructive",
-    });
+  useEffect(() => {
+    fetchWithdrawals();
+  }, []);
+
+  const fetchWithdrawals = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch withdrawal requests
+      const { data: withdrawalData, error: withdrawalError } = await supabase
+        .from('withdrawal_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (withdrawalError) {
+        console.error('Error fetching withdrawals:', withdrawalError);
+        toast({
+          title: "Error loading withdrawals",
+          description: withdrawalError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fetch profiles and wallets for additional data
+      const [profilesResult, walletsResult] = await Promise.all([
+        supabase.from('profiles').select('id, full_name, email'),
+        supabase.from('wallet').select('user_id, balance')
+      ]);
+
+      // Create lookup maps
+      const profilesMap = new Map();
+      const walletsMap = new Map();
+
+      if (profilesResult.data) {
+        profilesResult.data.forEach(profile => {
+          profilesMap.set(profile.id, { name: profile.full_name, email: profile.email });
+        });
+      }
+
+      if (walletsResult.data) {
+        walletsResult.data.forEach(wallet => {
+          walletsMap.set(wallet.user_id, Number(wallet.balance) || 0);
+        });
+      }
+
+      // Transform the data
+      const transformedWithdrawals: WithdrawalRequest[] = (withdrawalData || []).map(withdrawal => {
+        const profile = profilesMap.get(withdrawal.user_id);
+        return {
+          id: withdrawal.id,
+          customer_name: profile?.name || 'Unknown Customer',
+          customer_email: profile?.email || 'Unknown Email',
+          amount: Number(withdrawal.amount),
+          upi_id: withdrawal.upi_id,
+          bank_account_number: withdrawal.bank_account_number,
+          bank_ifsc: withdrawal.bank_ifsc,
+          bank_account_holder: withdrawal.bank_account_holder,
+          created_at: withdrawal.created_at,
+          status: withdrawal.status || 'pending',
+          wallet_balance: walletsMap.get(withdrawal.user_id) || 0
+        };
+      });
+
+      setWithdrawals(transformedWithdrawals);
+    } catch (error: any) {
+      console.error('Error in fetchWithdrawals:', error);
+      toast({
+        title: "Error loading withdrawals",
+        description: "Failed to load withdrawal data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproval = async (id: string, action: "approve" | "reject") => {
+    try {
+      const newStatus = action === "approve" ? "paid" : "rejected";
+      
+      const { error } = await supabase
+        .from('withdrawal_requests')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) {
+        toast({
+          title: "Error updating withdrawal",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setWithdrawals(prev => prev.map(w => 
+        w.id === id ? { ...w, status: newStatus } : w
+      ));
+
+      toast({
+        title: action === "approve" ? "Payment Approved" : "Payment Rejected",
+        description: `Withdrawal request has been ${action === "approve" ? "approved" : "rejected"}.`,
+        variant: action === "approve" ? "default" : "destructive",
+      });
+    } catch (error: any) {
+      console.error('Error updating withdrawal:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update withdrawal status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateCustomerBalance = async () => {
+    if (!balanceUpdate.customerId || !balanceUpdate.amount) {
+      toast({
+        title: "Invalid input",
+        description: "Please provide both customer email and amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Find user by email
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', balanceUpdate.customerId)
+        .single();
+
+      if (profileError || !profile) {
+        toast({
+          title: "Customer not found",
+          description: "No customer found with this email",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update wallet balance
+      const { error: walletError } = await supabase
+        .from('wallet')
+        .update({ 
+          balance: supabase.raw(`balance + ${Number(balanceUpdate.amount)}`)
+        })
+        .eq('user_id', profile.id);
+
+      if (walletError) {
+        toast({
+          title: "Error updating balance",
+          description: walletError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Balance Updated",
+        description: `Successfully added ₹${balanceUpdate.amount} to customer wallet`,
+      });
+
+      setBalanceUpdate({ customerId: "", amount: "" });
+      fetchWithdrawals(); // Refresh data
+    } catch (error: any) {
+      console.error('Error updating balance:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update customer balance",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredWithdrawals = withdrawals.filter(w =>
-    w.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    w.email.toLowerCase().includes(searchTerm.toLowerCase())
+    w.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    w.customer_email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const pendingWithdrawals = withdrawals.filter(w => w.status === "pending").length;
+  const totalPendingAmount = withdrawals
+    .filter(w => w.status === "pending")
+    .reduce((sum, w) => sum + w.amount, 0);
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="animate-spin inline-block w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full mb-4"></div>
+            <p className="text-white">Loading withdrawal requests...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -94,7 +268,10 @@ const WalletPayouts = () => {
                   onChange={(e) => setBalanceUpdate({...balanceUpdate, amount: e.target.value})}
                   className="bg-gray-700 border-gray-600 text-white"
                 />
-                <Button className="w-full bg-green-600 hover:bg-green-700">
+                <Button 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={updateCustomerBalance}
+                >
                   Update Balance
                 </Button>
               </div>
@@ -108,9 +285,7 @@ const WalletPayouts = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Pending Withdrawals</p>
-                  <h3 className="text-3xl font-bold text-yellow-400">
-                    {withdrawals.filter(w => w.status === "pending").length}
-                  </h3>
+                  <h3 className="text-3xl font-bold text-yellow-400">{pendingWithdrawals}</h3>
                 </div>
                 <DollarSign className="h-8 w-8 text-yellow-500" />
               </div>
@@ -122,9 +297,7 @@ const WalletPayouts = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Total Pending Amount</p>
-                  <h3 className="text-3xl font-bold text-red-400">
-                    ₹{withdrawals.filter(w => w.status === "pending").reduce((sum, w) => sum + w.amount, 0)}
-                  </h3>
+                  <h3 className="text-3xl font-bold text-red-400">₹{totalPendingAmount.toLocaleString()}</h3>
                 </div>
                 <CreditCard className="h-8 w-8 text-red-500" />
               </div>
@@ -135,10 +308,10 @@ const WalletPayouts = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Processed This Month</p>
-                  <h3 className="text-3xl font-bold text-green-400">₹45,230</h3>
+                  <p className="text-sm text-gray-400">Total Requests</p>
+                  <h3 className="text-3xl font-bold text-blue-400">{withdrawals.length}</h3>
                 </div>
-                <Wallet className="h-8 w-8 text-green-500" />
+                <Wallet className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
@@ -161,75 +334,88 @@ const WalletPayouts = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="border-gray-700">
-                  <TableHead className="text-gray-300">Customer</TableHead>
-                  <TableHead className="text-gray-300">Amount</TableHead>
-                  <TableHead className="text-gray-300">Payment Details</TableHead>
-                  <TableHead className="text-gray-300">Request Date</TableHead>
-                  <TableHead className="text-gray-300">Wallet Balance</TableHead>
-                  <TableHead className="text-gray-300">Status</TableHead>
-                  <TableHead className="text-gray-300">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredWithdrawals.map((withdrawal) => (
-                  <TableRow key={withdrawal.id} className="border-gray-700">
-                    <TableCell className="text-white">
-                      <div>
-                        <div className="font-medium">{withdrawal.customerName}</div>
-                        <div className="text-sm text-gray-400">{withdrawal.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-white font-medium">₹{withdrawal.amount}</TableCell>
-                    <TableCell className="text-gray-300">
-                      {withdrawal.upiId ? (
-                        <div>
-                          <div className="text-sm">UPI: {withdrawal.upiId}</div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="text-sm">Bank: {withdrawal.bankAccount}</div>
-                          <div className="text-xs text-gray-400">IFSC: {withdrawal.bankIfsc}</div>
-                          <div className="text-xs text-gray-400">{withdrawal.accountHolder}</div>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-gray-300">{withdrawal.requestDate}</TableCell>
-                    <TableCell className="text-gray-300">₹{withdrawal.walletBalance}</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        withdrawal.status === "pending" ? "secondary" :
-                        withdrawal.status === "paid" ? "default" : "destructive"
-                      }>
-                        {withdrawal.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {withdrawal.status === "pending" && (
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => handleApproval(withdrawal.id, "approve")}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleApproval(withdrawal.id, "reject")}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
+            {filteredWithdrawals.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-700">
+                    <TableHead className="text-gray-300">Customer</TableHead>
+                    <TableHead className="text-gray-300">Amount</TableHead>
+                    <TableHead className="text-gray-300">Payment Details</TableHead>
+                    <TableHead className="text-gray-300">Request Date</TableHead>
+                    <TableHead className="text-gray-300">Wallet Balance</TableHead>
+                    <TableHead className="text-gray-300">Status</TableHead>
+                    <TableHead className="text-gray-300">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredWithdrawals.map((withdrawal) => (
+                    <TableRow key={withdrawal.id} className="border-gray-700">
+                      <TableCell className="text-white">
+                        <div>
+                          <div className="font-medium">{withdrawal.customer_name}</div>
+                          <div className="text-sm text-gray-400">{withdrawal.customer_email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-white font-medium">₹{withdrawal.amount.toLocaleString()}</TableCell>
+                      <TableCell className="text-gray-300">
+                        {withdrawal.upi_id ? (
+                          <div>
+                            <div className="text-sm">UPI: {withdrawal.upi_id}</div>
+                          </div>
+                        ) : withdrawal.bank_account_number ? (
+                          <div>
+                            <div className="text-sm">Bank: {withdrawal.bank_account_number}</div>
+                            <div className="text-xs text-gray-400">IFSC: {withdrawal.bank_ifsc}</div>
+                            <div className="text-xs text-gray-400">{withdrawal.bank_account_holder}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">No payment details</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-gray-300">
+                        {new Date(withdrawal.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-gray-300">₹{withdrawal.wallet_balance.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={
+                          withdrawal.status === "pending" ? "secondary" :
+                          withdrawal.status === "paid" ? "default" : "destructive"
+                        }>
+                          {withdrawal.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {withdrawal.status === "pending" && (
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleApproval(withdrawal.id, "approve")}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleApproval(withdrawal.id, "reject")}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-400">No withdrawal requests found</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  {searchTerm ? "Try adjusting your search terms" : "Withdrawal requests will appear here when customers request payouts"}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
