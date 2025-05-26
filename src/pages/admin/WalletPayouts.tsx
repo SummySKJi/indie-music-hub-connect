@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -178,12 +177,29 @@ const WalletPayouts = () => {
         return;
       }
 
+      // First get current balance
+      const { data: currentWallet, error: getWalletError } = await supabase
+        .from('wallet')
+        .select('balance')
+        .eq('user_id', profile.id)
+        .single();
+
+      if (getWalletError) {
+        toast({
+          title: "Error fetching wallet",
+          description: getWalletError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const currentBalance = Number(currentWallet?.balance) || 0;
+      const newBalance = currentBalance + Number(balanceUpdate.amount);
+
       // Update wallet balance
       const { error: walletError } = await supabase
         .from('wallet')
-        .update({ 
-          balance: supabase.raw(`balance + ${Number(balanceUpdate.amount)}`)
-        })
+        .update({ balance: newBalance })
         .eq('user_id', profile.id);
 
       if (walletError) {
