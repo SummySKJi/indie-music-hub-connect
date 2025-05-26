@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,7 +105,10 @@ const AdminDashboard = () => {
       const pendingTakedownRequests = allTakedowns.filter(t => t.status === 'pending').length;
       
       const wallets = walletResult.data || [];
-      const totalEarnings = wallets.reduce((sum, wallet) => sum + (parseFloat(wallet.balance) || 0), 0);
+      const totalEarnings = wallets.reduce((sum, wallet) => {
+        const balance = wallet.balance ? Number(wallet.balance) : 0;
+        return sum + balance;
+      }, 0);
 
       setStats({
         totalUsers,

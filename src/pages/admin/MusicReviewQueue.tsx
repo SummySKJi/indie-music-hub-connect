@@ -53,25 +53,50 @@ const MusicReviewQueue = () => {
     try {
       setLoading(true);
       
-      // Fetch releases with related data
-      const { data: releases, error } = await supabase
+      // First fetch releases
+      const { data: releases, error: releasesError } = await supabase
         .from('releases')
-        .select(`
-          *,
-          artists(name),
-          labels(name),
-          profiles(email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching releases:', error);
+      if (releasesError) {
+        console.error('Error fetching releases:', releasesError);
         toast({
           title: "Error loading submissions",
-          description: error.message,
+          description: releasesError.message,
           variant: "destructive",
         });
         return;
+      }
+
+      // Then fetch related data separately to avoid join issues
+      const [artistsResult, labelsResult, profilesResult] = await Promise.all([
+        supabase.from('artists').select('id, name'),
+        supabase.from('labels').select('id, name'),
+        supabase.from('profiles').select('id, email')
+      ]);
+
+      // Create lookup maps
+      const artistsMap = new Map();
+      const labelsMap = new Map();
+      const profilesMap = new Map();
+
+      if (artistsResult.data) {
+        artistsResult.data.forEach(artist => {
+          artistsMap.set(artist.id, artist.name);
+        });
+      }
+
+      if (labelsResult.data) {
+        labelsResult.data.forEach(label => {
+          labelsMap.set(label.id, label.name);
+        });
+      }
+
+      if (profilesResult.data) {
+        profilesResult.data.forEach(profile => {
+          profilesMap.set(profile.id, profile.email);
+        });
       }
 
       // Transform the data to match our interface
@@ -90,9 +115,9 @@ const MusicReviewQueue = () => {
         cover_art: release.cover_art || '',
         audio_file: release.audio_file || '',
         admin_notes: release.admin_notes || '',
-        artist_name: release.artists?.name || 'Unknown Artist',
-        label_name: release.labels?.name || 'Independent',
-        user_email: release.profiles?.email || 'Unknown'
+        artist_name: release.artist_id ? artistsMap.get(release.artist_id) || 'Unknown Artist' : 'Unknown Artist',
+        label_name: release.label_id ? labelsMap.get(release.label_id) || 'Independent' : 'Independent',
+        user_email: release.user_id ? profilesMap.get(release.user_id) || 'Unknown' : 'Unknown'
       }));
 
       setSubmissions(transformedReleases);
