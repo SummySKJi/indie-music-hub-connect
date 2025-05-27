@@ -5,17 +5,14 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requireAdmin?: boolean;
 }
 
-const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { user, loading, isAdmin } = useAuth();
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  const { user, loading } = useAuth();
 
   console.log("🛡️ ProtectedRoute - Auth state:", { 
     user: !!user, 
     userEmail: user?.email,
-    isAdmin, 
-    requireAdmin, 
     loading 
   });
 
@@ -32,12 +29,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
   if (!user) {
     console.log("❌ No user found, redirecting to login");
-    return <Navigate to={requireAdmin ? "/admin/login" : "/login"} replace />;
-  }
-
-  if (requireAdmin && !isAdmin) {
-    console.log("❌ Admin required but user is not admin, redirecting to admin login");
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   console.log("✅ Access granted to:", user.email);

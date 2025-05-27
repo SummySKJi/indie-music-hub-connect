@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -29,20 +29,6 @@ import CopyrightRemoval from "./pages/customer/CopyrightRemoval";
 import RoyaltyReports from "./pages/customer/RoyaltyReports";
 import OacRequests from "./pages/customer/OacRequests";
 import CustomerProfile from "./pages/customer/CustomerProfile";
-
-// Admin pages
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import MusicReviewQueue from "./pages/admin/MusicReviewQueue";
-import AllReleases from "./pages/admin/AllReleases";
-import CustomerManagement from "./pages/admin/CustomerManagement";
-import ArtistLabelManagement from "./pages/admin/ArtistLabelManagement";
-import WalletPayouts from "./pages/admin/WalletPayouts";
-import CopyrightRequests from "./pages/admin/CopyrightRequests";
-import AdminOacRequests from "./pages/admin/OacRequests";
-import PlatformManagement from "./pages/admin/PlatformManagement";
-import AdminRoyaltyReports from "./pages/admin/AdminRoyaltyReports";
-import AdminSettings from "./pages/admin/AdminSettings";
 
 import NotFound from "./pages/NotFound";
 
@@ -110,77 +96,6 @@ const App = () => (
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <CustomerProfile />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin routes */}
-              <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin Music Management */}
-              <Route path="/admin/music/review-queue" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <MusicReviewQueue />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/music/releases" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AllReleases />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin Customer & Artist Management */}
-              <Route path="/admin/customers" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <CustomerManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/artists-labels" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <ArtistLabelManagement />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin Financial Management */}
-              <Route path="/admin/wallet-payouts" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <WalletPayouts />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin Request Management */}
-              <Route path="/admin/requests/copyright" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <CopyrightRequests />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/requests/oac" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminOacRequests />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin Platform & Reports Management */}
-              <Route path="/admin/platforms" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <PlatformManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/royalty-reports" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminRoyaltyReports />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin Settings */}
-              <Route path="/admin/settings" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminSettings />
                 </ProtectedRoute>
               } />
               
