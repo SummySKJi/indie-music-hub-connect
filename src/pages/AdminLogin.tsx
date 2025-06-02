@@ -12,7 +12,7 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "admin@log.in",
-    password: ""
+    password: "Nayak@@77"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, user, isAdmin } = useAuth();
@@ -28,6 +28,8 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
+    console.log("🔐 Attempting admin login with:", { email: formData.email, password: formData.password });
     
     const { error } = await signIn(formData.email, formData.password);
     
