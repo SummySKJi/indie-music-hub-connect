@@ -1,18 +1,17 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
-import { Search, Eye, Edit, Ban, UserCheck, Download, Mail } from "lucide-react";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger 
+} from "@/components/ui/dialog";
+import { Search, Eye, Edit, Ban, CheckCircle, Users, Mail, Calendar } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -20,99 +19,115 @@ interface User {
   id: string;
   full_name: string;
   email: string;
-  phone: string;
+  phone?: string;
+  whatsapp?: string;
   created_at: string;
-  status: "active" | "suspended" | "deactivated";
-  totalReleases: number;
-  totalEarnings: number;
+  status: 'active' | 'suspended' | 'deactivated';
 }
 
 const UserManagement = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const { data: users, isLoading, refetch } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: async () => {
-      const { data: profiles, error } = await supabase
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          full_name,
-          email,
-          phone,
-          created_at
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Get release counts for each user
-      const usersWithStats = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          const { count: releaseCount } = await supabase
-            .from('releases')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', profile.id);
+      // Add status field (default to active for now)
+      const usersWithStatus = data?.map(user => ({
+        ...user,
+        status: 'active' as const
+      })) || [];
 
-          const { data: wallet } = await supabase
-            .from('wallet')
-            .select('balance')
-            .eq('user_id', profile.id)
-            .single();
-
-          return {
-            ...profile,
-            status: "active" as const,
-            totalReleases: releaseCount || 0,
-            totalEarnings: Number(wallet?.balance || 0),
-          };
-        })
-      );
-
-      return usersWithStats;
+      setUsers(usersWithStatus);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  });
-
-  const updateUserStatus = async (userId: string, newStatus: string) => {
-    // In a real implementation, you'd update a user_status table
-    toast({
-      title: "Status Updated",
-      description: `User status updated to ${newStatus}.`,
-    });
-    refetch();
   };
 
-  const filteredUsers = users?.filter(user => {
-    const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  }) || [];
+  const filteredUsers = users.filter(user =>
+    user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
-      active: "default",
-      suspended: "destructive",
-      deactivated: "outline"
-    };
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'suspended':
+        return 'bg-yellow-500';
+      case 'deactivated':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
   };
+
+  const handleStatusChange = async (userId: string, newStatus: 'active' | 'suspended' | 'deactivated') => {
+    try {
+      // For now, we'll just update the local state
+      // In a real implementation, you'd update this in the database
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, status: newStatus } : user
+      ));
+
+      toast({
+        title: "Success",
+        description: `User status updated to ${newStatus}`,
+      });
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-white">Loading users...</div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white">User Management</h1>
-          <div className="flex space-x-3">
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export Users
-            </Button>
-            <Button variant="outline">
-              <Mail className="h-4 w-4 mr-2" />
-              Bulk Email
-            </Button>
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+              <Input
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
           </div>
         </div>
 
@@ -123,23 +138,9 @@ const UserManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Total Users</p>
-                  <h3 className="text-3xl font-bold text-blue-400">{users?.length || 0}</h3>
+                  <h3 className="text-2xl font-bold text-white">{users.length}</h3>
                 </div>
-                <UserCheck className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Active Users</p>
-                  <h3 className="text-3xl font-bold text-green-400">
-                    {users?.filter(u => u.status === "active").length || 0}
-                  </h3>
-                </div>
-                <UserCheck className="h-8 w-8 text-green-500" />
+                <Users className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
@@ -148,15 +149,12 @@ const UserManagement = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">New This Month</p>
-                  <h3 className="text-3xl font-bold text-purple-400">
-                    {users?.filter(u => {
-                      const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-                      return new Date(u.created_at) > monthAgo;
-                    }).length || 0}
+                  <p className="text-sm text-gray-400">Active Users</p>
+                  <h3 className="text-2xl font-bold text-green-400">
+                    {users.filter(u => u.status === 'active').length}
                   </h3>
                 </div>
-                <UserCheck className="h-8 w-8 text-purple-500" />
+                <CheckCircle className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
@@ -166,108 +164,140 @@ const UserManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Suspended</p>
-                  <h3 className="text-3xl font-bold text-red-400">
-                    {users?.filter(u => u.status === "suspended").length || 0}
+                  <h3 className="text-2xl font-bold text-yellow-400">
+                    {users.filter(u => u.status === 'suspended').length}
                   </h3>
                 </div>
-                <Ban className="h-8 w-8 text-red-500" />
+                <Ban className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">New This Month</p>
+                  <h3 className="text-2xl font-bold text-purple-400">
+                    {users.filter(u => {
+                      const monthAgo = new Date();
+                      monthAgo.setMonth(monthAgo.getMonth() - 1);
+                      return new Date(u.created_at) > monthAgo;
+                    }).length}
+                  </h3>
+                </div>
+                <Calendar className="h-8 w-8 text-purple-500" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters and Search */}
+        {/* Users Table */}
         <Card className="bg-gray-800 border-gray-700">
           <CardHeader>
-            <CardTitle className="text-white">User Management</CardTitle>
-            <CardDescription className="text-gray-400">
-              Manage customer accounts and view user details
-            </CardDescription>
-            <div className="flex space-x-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search users by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-gray-700 border-gray-600 text-white"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48 bg-gray-700 border-gray-600 text-white">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  <SelectItem value="deactivated">Deactivated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <CardTitle className="text-white">All Users</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin inline-block w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-                <p className="text-gray-400 mt-2">Loading users...</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-700">
-                    <TableHead className="text-gray-300">Name</TableHead>
-                    <TableHead className="text-gray-300">Email</TableHead>
-                    <TableHead className="text-gray-300">Phone</TableHead>
-                    <TableHead className="text-gray-300">Registration Date</TableHead>
-                    <TableHead className="text-gray-300">Releases</TableHead>
-                    <TableHead className="text-gray-300">Earnings</TableHead>
-                    <TableHead className="text-gray-300">Status</TableHead>
-                    <TableHead className="text-gray-300">Actions</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-700">
+                  <TableHead className="text-gray-300">Name</TableHead>
+                  <TableHead className="text-gray-300">Email</TableHead>
+                  <TableHead className="text-gray-300">Phone</TableHead>
+                  <TableHead className="text-gray-300">Joined</TableHead>
+                  <TableHead className="text-gray-300">Status</TableHead>
+                  <TableHead className="text-gray-300">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id} className="border-gray-700">
+                    <TableCell className="text-white">
+                      {user.full_name || 'No name provided'}
+                    </TableCell>
+                    <TableCell className="text-gray-300">{user.email}</TableCell>
+                    <TableCell className="text-gray-300">
+                      {user.phone || 'Not provided'}
+                    </TableCell>
+                    <TableCell className="text-gray-300">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(user.status)}>
+                        {user.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedUser(user)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-gray-800 border-gray-700">
+                            <DialogHeader>
+                              <DialogTitle className="text-white">User Details</DialogTitle>
+                            </DialogHeader>
+                            {selectedUser && (
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="text-sm font-medium text-gray-400">Full Name</label>
+                                  <p className="text-white">{selectedUser.full_name || 'Not provided'}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-400">Email</label>
+                                  <p className="text-white">{selectedUser.email}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-400">Phone</label>
+                                  <p className="text-white">{selectedUser.phone || 'Not provided'}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-400">WhatsApp</label>
+                                  <p className="text-white">{selectedUser.whatsapp || 'Not provided'}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-400">Joined</label>
+                                  <p className="text-white">{new Date(selectedUser.created_at).toLocaleString()}</p>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <Button
+                                    onClick={() => handleStatusChange(selectedUser.id, 'active')}
+                                    className="bg-green-600 hover:bg-green-700"
+                                    disabled={selectedUser.status === 'active'}
+                                  >
+                                    Activate
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleStatusChange(selectedUser.id, 'suspended')}
+                                    className="bg-yellow-600 hover:bg-yellow-700"
+                                    disabled={selectedUser.status === 'suspended'}
+                                  >
+                                    Suspend
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleStatusChange(selectedUser.id, 'deactivated')}
+                                    className="bg-red-600 hover:bg-red-700"
+                                    disabled={selectedUser.status === 'deactivated'}
+                                  >
+                                    Deactivate
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="border-gray-700">
-                      <TableCell className="text-white font-medium">
-                        {user.full_name || 'No name'}
-                      </TableCell>
-                      <TableCell className="text-gray-300">{user.email}</TableCell>
-                      <TableCell className="text-gray-300">{user.phone || 'N/A'}</TableCell>
-                      <TableCell className="text-gray-300">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-gray-300">{user.totalReleases}</TableCell>
-                      <TableCell className="text-gray-300">₹{user.totalEarnings.toLocaleString()}</TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Select 
-                            value={user.status} 
-                            onValueChange={(value) => updateUserStatus(user.id, value)}
-                          >
-                            <SelectTrigger className="w-32 bg-gray-700 border-gray-600 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-700 border-gray-600">
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="suspended">Suspended</SelectItem>
-                              <SelectItem value="deactivated">Deactivated</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>

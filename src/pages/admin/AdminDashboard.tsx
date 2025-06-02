@@ -61,18 +61,31 @@ const AdminDashboard = () => {
       // Fetch recent releases
       const { data: releases } = await supabase
         .from('releases')
-        .select('id, song_name, status, created_at, profiles(full_name)')
+        .select('id, song_name, status, created_at, user_id')
         .order('created_at', { ascending: false })
         .limit(10);
 
-      // Fetch recent users
+      // Fetch user details for releases
+      const userIds = releases?.map(r => r.user_id).filter(Boolean) || [];
       const { data: users } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+
+      // Combine data
+      const releasesWithUsers = releases?.map(release => ({
+        ...release,
+        user_name: users?.find(u => u.id === release.user_id)?.full_name || 'Unknown'
+      })) || [];
+
+      // Fetch recent users
+      const { data: recentUsers } = await supabase
         .from('profiles')
         .select('id, full_name, email, created_at')
         .order('created_at', { ascending: false })
         .limit(5);
 
-      return { releases: releases || [], users: users || [] };
+      return { releases: releasesWithUsers, users: recentUsers || [] };
     }
   });
 
@@ -286,7 +299,7 @@ const AdminDashboard = () => {
                     <div>
                       <p className="text-sm text-white truncate">{release.song_name}</p>
                       <p className="text-xs text-gray-400">
-                        by {release.profiles?.full_name || 'Unknown'}
+                        by {release.user_name}
                       </p>
                     </div>
                     <Badge 
@@ -337,7 +350,7 @@ const AdminDashboard = () => {
                     <div className="w-32 bg-gray-700 rounded-full h-2">
                       <div 
                         className="bg-yellow-500 h-2 rounded-full" 
-                        style={{ width: `${(stats.pendingReleases / stats.totalReleases) * 100}%` }}
+                        style={{ width: `${stats.totalReleases > 0 ? (stats.pendingReleases / stats.totalReleases) * 100 : 0}%` }}
                       ></div>
                     </div>
                     <span className="text-yellow-400">{stats.pendingReleases}</span>
@@ -349,7 +362,7 @@ const AdminDashboard = () => {
                     <div className="w-32 bg-gray-700 rounded-full h-2">
                       <div 
                         className="bg-green-500 h-2 rounded-full" 
-                        style={{ width: `${(stats.approvedReleases / stats.totalReleases) * 100}%` }}
+                        style={{ width: `${stats.totalReleases > 0 ? (stats.approvedReleases / stats.totalReleases) * 100 : 0}%` }}
                       ></div>
                     </div>
                     <span className="text-green-400">{stats.approvedReleases}</span>
@@ -361,7 +374,7 @@ const AdminDashboard = () => {
                     <div className="w-32 bg-gray-700 rounded-full h-2">
                       <div 
                         className="bg-red-500 h-2 rounded-full" 
-                        style={{ width: `${(stats.rejectedReleases / stats.totalReleases) * 100}%` }}
+                        style={{ width: `${stats.totalReleases > 0 ? (stats.rejectedReleases / stats.totalReleases) * 100 : 0}%` }}
                       ></div>
                     </div>
                     <span className="text-red-400">{stats.rejectedReleases}</span>
