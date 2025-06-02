@@ -1,19 +1,24 @@
 
 import { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  adminOnly?: boolean;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
+const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
+  const { user, loading, isAdmin } = useAuth();
+  const location = useLocation();
 
   console.log("🛡️ ProtectedRoute - Auth state:", { 
     user: !!user, 
     userEmail: user?.email,
-    loading 
+    loading,
+    isAdmin,
+    adminOnly,
+    currentPath: location.pathname
   });
 
   if (loading) {
@@ -30,6 +35,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   if (!user) {
     console.log("❌ No user found, redirecting to login");
     return <Navigate to="/login" replace />;
+  }
+
+  // If this is an admin-only route, check admin status
+  if (adminOnly && !isAdmin) {
+    console.log("❌ Admin access required but user is not admin, redirecting to dashboard");
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // If user is admin but trying to access regular routes, redirect to admin panel
+  if (isAdmin && !adminOnly && location.pathname.startsWith('/admin') === false) {
+    console.log("🔄 Admin user accessing regular route, allowing access");
   }
 
   console.log("✅ Access granted to:", user.email);

@@ -92,13 +92,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log("Checking user role for:", authUser.email);
       
-      // Define new admin email
-      const adminEmails = [
-        'super.admin@inddistribution.com', // New admin email
-      ];
-      
-      const userEmail = authUser.email || '';
-      const isUserAdmin = adminEmails.includes(userEmail);
+      // Check database for admin role
+      const { data: userRole, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', authUser.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error("Error checking user role:", error);
+        setIsAdmin(false);
+        return;
+      }
+
+      const isUserAdmin = userRole?.role === 'admin';
       
       if (isUserAdmin) {
         setIsAdmin(true);

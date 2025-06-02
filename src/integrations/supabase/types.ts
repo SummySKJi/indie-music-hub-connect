@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+        }
+        Relationships: []
+      }
       artists: {
         Row: {
           apple_music_profile: string | null
@@ -75,6 +105,121 @@ export type Database = {
         }
         Relationships: []
       }
+      calls: {
+        Row: {
+          call_type: string | null
+          caller_id: string | null
+          conversation_id: string | null
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          call_type?: string | null
+          caller_id?: string | null
+          conversation_id?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          call_type?: string | null
+          caller_id?: string | null
+          conversation_id?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contacts: {
+        Row: {
+          added_at: string | null
+          contact_name: string | null
+          contact_user_id: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          contact_name?: string | null
+          contact_user_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          contact_name?: string | null
+          contact_user_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      conversation_participants: {
+        Row: {
+          conversation_id: string | null
+          id: string
+          joined_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       labels: {
         Row: {
           bio: string | null
@@ -132,6 +277,92 @@ export type Database = {
         }
         Relationships: []
       }
+      message_status: {
+        Row: {
+          id: string
+          message_id: string | null
+          status: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          message_id?: string | null
+          status?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          message_id?: string | null
+          status?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_status_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string | null
+          conversation_id: string | null
+          created_at: string | null
+          file_url: string | null
+          id: string
+          message_type: string | null
+          reply_to: string | null
+          sender_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          message_type?: string | null
+          reply_to?: string | null
+          sender_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          message_type?: string | null
+          reply_to?: string | null
+          sender_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       oac_requests: {
         Row: {
           admin_notes: string | null
@@ -185,6 +416,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -473,7 +728,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_or_create_conversation: {
+        Args: { participant_ids: string[] }
+        Returns: string
+      }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
