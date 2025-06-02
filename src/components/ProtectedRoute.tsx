@@ -34,6 +34,10 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
 
   if (!user) {
     console.log("❌ No user found, redirecting to login");
+    // Check if this is an admin route
+    if (location.pathname.startsWith('/admin')) {
+      return <Navigate to="/admin/login" replace />;
+    }
     return <Navigate to="/login" replace />;
   }
 
@@ -43,9 +47,10 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If user is admin but trying to access regular routes, redirect to admin panel
-  if (isAdmin && !adminOnly && location.pathname.startsWith('/admin') === false) {
-    console.log("🔄 Admin user accessing regular route, allowing access");
+  // If user is admin and trying to access regular login, redirect to admin login
+  if (user.email === 'admin@log.in' && location.pathname === '/login') {
+    console.log("🔄 Admin user trying to access regular login, redirecting to admin login");
+    return <Navigate to="/admin/login" replace />;
   }
 
   console.log("✅ Access granted to:", user.email);

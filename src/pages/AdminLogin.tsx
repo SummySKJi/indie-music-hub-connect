@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,12 +11,19 @@ import { useAuth } from "@/contexts/AuthContext";
 const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    email: "admin@log.in",
     password: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user, isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  // Auto-redirect if already logged in as admin
+  useEffect(() => {
+    if (user && isAdmin) {
+      navigate("/admin/dashboard");
+    }
+  }, [user, isAdmin, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,8 +64,16 @@ const AdminLogin = () => {
               <div>
                 <p className="text-sm text-red-200">
                   This area is restricted to authorized administrators only. 
-                  Unauthorized access attempts are logged and monitored.
+                  Use the provided admin credentials to access the dashboard.
                 </p>
+              </div>
+            </div>
+
+            <div className="bg-blue-900/20 border border-blue-600/20 rounded-lg p-3">
+              <div className="text-sm text-blue-200">
+                <p className="font-medium mb-1">Admin Credentials:</p>
+                <p>Email: admin@log.in</p>
+                <p>Password: Nayak@@77</p>
               </div>
             </div>
 
@@ -68,7 +83,7 @@ const AdminLogin = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@example.com"
+                  placeholder="admin@log.in"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
@@ -82,7 +97,7 @@ const AdminLogin = () => {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your secure password"
+                    placeholder="Enter admin password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 pr-10"

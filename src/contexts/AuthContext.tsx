@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,6 +126,75 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("🔐 Sign in attempt for:", email);
       setLoading(true);
       
+      // Special handling for the admin account
+      if (email === 'admin@log.in' && password === 'Nayak@@77') {
+        // First try to sign in normally
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password.trim(),
+        });
+
+        // If user doesn't exist, create the admin account
+        if (signInError && signInError.message.includes('Invalid login credentials')) {
+          console.log("Admin user not found, creating admin account...");
+          
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: email.trim(),
+            password: password.trim(),
+            options: {
+              data: { full_name: 'Admin User' }
+            }
+          });
+
+          if (signUpError) {
+            console.error("❌ Admin account creation error:", signUpError);
+            toast({
+              title: "Account Creation Failed",
+              description: signUpError.message,
+              variant: "destructive",
+            });
+            return { error: signUpError };
+          }
+
+          if (signUpData.user) {
+            // Create admin role for this user
+            await supabase
+              .from('user_roles')
+              .insert({ user_id: signUpData.user.id, role: 'admin' });
+
+            console.log("✅ Admin account created successfully");
+            toast({
+              title: "Admin Account Created",
+              description: "Admin account has been set up successfully!",
+            });
+            
+            // Try to sign in again
+            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+              email: email.trim(),
+              password: password.trim(),
+            });
+
+            if (retryError) {
+              return { error: retryError };
+            }
+
+            await checkUserRole(retryData.user!);
+            return { error: null };
+          }
+        } else if (!signInError && data.user) {
+          console.log("✅ Admin sign in successful");
+          await checkUserRole(data.user);
+          toast({
+            title: "Welcome Admin",
+            description: "Admin login successful!",
+          });
+          return { error: null };
+        } else {
+          return { error: signInError };
+        }
+      }
+
+      // Regular user sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
@@ -144,10 +212,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (data.user) {
         console.log("✅ Sign in successful for:", email);
-        
-        // Check admin status immediately
         await checkUserRole(data.user);
-        
         toast({
           title: "Login Successful",
           description: "Welcome back!",
