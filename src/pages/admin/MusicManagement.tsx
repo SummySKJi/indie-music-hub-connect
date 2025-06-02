@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,7 @@ interface Release {
   song_name: string;
   type: string;
   language: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'live' | 'takedown_requested' | 'takedown_completed';
   release_date?: string;
   created_at: string;
   user_id: string;
@@ -72,9 +71,21 @@ const MusicManagement = () => {
         .select('id, name')
         .in('id', artistIds);
 
-      // Combine the data
+      // Combine the data with proper type casting
       const releasesWithDetails = releasesData?.map(release => ({
-        ...release,
+        id: release.id,
+        song_name: release.song_name || '',
+        type: release.type || '',
+        language: release.language || '',
+        status: (release.status || 'pending') as 'pending' | 'approved' | 'rejected' | 'live' | 'takedown_requested' | 'takedown_completed',
+        release_date: release.release_date || undefined,
+        created_at: release.created_at || '',
+        user_id: release.user_id || '',
+        artist_id: release.artist_id || undefined,
+        label_id: release.label_id || undefined,
+        audio_file: release.audio_file || undefined,
+        cover_art: release.cover_art || undefined,
+        admin_notes: release.admin_notes || undefined,
         user_name: users?.find(u => u.id === release.user_id)?.full_name || 'Unknown',
         artist_name: artists?.find(a => a.id === release.artist_id)?.name || 'Unknown'
       })) || [];
@@ -114,7 +125,7 @@ const MusicManagement = () => {
 
       setReleases(prev => prev.map(release => 
         release.id === releaseId 
-          ? { ...release, status: newStatus, admin_notes: notes || null }
+          ? { ...release, status: newStatus, admin_notes: notes || undefined }
           : release
       ));
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,9 +61,18 @@ const FinancialManagement = () => {
         .select('id, full_name, email')
         .in('id', userIds);
 
-      // Combine the data
+      // Combine the data with proper type casting
       const requestsWithDetails = requestsData?.map(request => ({
-        ...request,
+        id: request.id,
+        user_id: request.user_id || '',
+        amount: request.amount,
+        status: (request.status || 'pending') as 'pending' | 'approved' | 'rejected' | 'processed',
+        upi_id: request.upi_id || undefined,
+        bank_account_number: request.bank_account_number || undefined,
+        bank_account_holder: request.bank_account_holder || undefined,
+        bank_ifsc: request.bank_ifsc || undefined,
+        admin_notes: request.admin_notes || undefined,
+        created_at: request.created_at || '',
         user_name: users?.find(u => u.id === request.user_id)?.full_name || 'Unknown',
         user_email: users?.find(u => u.id === request.user_id)?.email || 'Unknown'
       })) || [];
@@ -103,7 +111,7 @@ const FinancialManagement = () => {
 
       setWithdrawalRequests(prev => prev.map(request => 
         request.id === requestId 
-          ? { ...request, status: newStatus, admin_notes: notes || null }
+          ? { ...request, status: newStatus, admin_notes: notes || undefined }
           : request
       ));
 
