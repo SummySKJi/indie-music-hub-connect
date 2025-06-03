@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,21 +33,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("Setting up auth state listener");
+    console.log("🔧 Setting up auth state listener");
     
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state change:", event, session?.user?.email);
+        console.log("🔄 Auth state change:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check if user is admin when session changes
         if (session?.user) {
-          console.log("Checking admin status for user:", session.user.email);
           await checkUserRole(session.user);
         } else {
-          console.log("No user session, resetting admin status");
           setIsAdmin(false);
         }
         
@@ -54,18 +51,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // THEN check for existing session
     const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error("Error getting session:", error);
+          console.error("❌ Error getting session:", error);
           setLoading(false);
           return;
         }
 
-        console.log("Initial session check:", session?.user?.email);
+        console.log("🔍 Initial session check:", session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -75,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         setLoading(false);
       } catch (error) {
-        console.error("Error initializing auth:", error);
+        console.error("💥 Error initializing auth:", error);
         setLoading(false);
       }
     };
@@ -89,9 +85,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkUserRole = async (authUser: User) => {
     try {
-      console.log("Checking user role for:", authUser.email);
+      console.log("🔍 Checking user role for:", authUser.email);
       
-      // Check database for admin role
       const { data: userRole, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -99,24 +94,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('role', 'admin')
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-        console.error("Error checking user role:", error);
+      if (error && error.code !== 'PGRST116') {
+        console.error("❌ Error checking user role:", error);
         setIsAdmin(false);
         return;
       }
 
       const isUserAdmin = userRole?.role === 'admin';
+      setIsAdmin(isUserAdmin);
       
-      if (isUserAdmin) {
-        setIsAdmin(true);
-        console.log("✅ Admin access granted for:", authUser.email);
-      } else {
-        setIsAdmin(false);
-        console.log("👤 Regular user access for:", authUser.email);
-      }
+      console.log(isUserAdmin ? "✅ Admin access granted" : "👤 Regular user access");
       
     } catch (error) {
-      console.error("Error checking user role:", error);
+      console.error("💥 Error checking user role:", error);
       setIsAdmin(false);
     }
   };
@@ -126,17 +116,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("🔐 Sign in attempt for:", email);
       setLoading(true);
       
-      // Special handling for the admin account
       if (email === 'admin@log.in' && password === 'Nayak@@77') {
-        // First try to sign in normally
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password: password.trim(),
         });
 
-        // If user doesn't exist, create the admin account
         if (signInError && signInError.message.includes('Invalid login credentials')) {
-          console.log("Admin user not found, creating admin account...");
+          console.log("🔧 Admin user not found, creating admin account...");
           
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email: email.trim(),
@@ -157,7 +144,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
 
           if (signUpData.user) {
-            // Create admin role for this user
             await supabase
               .from('user_roles')
               .insert({ user_id: signUpData.user.id, role: 'admin' });
@@ -168,7 +154,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               description: "Admin account has been set up successfully!",
             });
             
-            // Try to sign in again
             const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
               email: email.trim(),
               password: password.trim(),
@@ -194,7 +179,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
-      // Regular user sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
@@ -275,13 +259,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAdmin(false);
       setUser(null);
       setSession(null);
-      navigate("/login");
+      navigate("/");
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
       });
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("❌ Error signing out:", error);
     }
   };
 

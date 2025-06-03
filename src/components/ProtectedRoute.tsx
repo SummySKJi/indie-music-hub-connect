@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
   const { user, loading, isAdmin } = useAuth();
   const location = useLocation();
 
-  console.log("🛡️ ProtectedRoute - Auth state:", { 
+  console.log("🛡️ ProtectedRoute check:", { 
     user: !!user, 
     userEmail: user?.email,
     loading,
@@ -34,23 +34,15 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
 
   if (!user) {
     console.log("❌ No user found, redirecting to login");
-    // Check if this is an admin route
     if (location.pathname.startsWith('/admin')) {
       return <Navigate to="/admin/login" replace />;
     }
     return <Navigate to="/login" replace />;
   }
 
-  // If this is an admin-only route, check admin status
   if (adminOnly && !isAdmin) {
-    console.log("❌ Admin access required but user is not admin, redirecting to dashboard");
+    console.log("❌ Admin access required but user is not admin");
     return <Navigate to="/dashboard" replace />;
-  }
-
-  // If user is admin and trying to access regular login, redirect to admin login
-  if (user.email === 'admin@log.in' && location.pathname === '/login') {
-    console.log("🔄 Admin user trying to access regular login, redirecting to admin login");
-    return <Navigate to="/admin/login" replace />;
   }
 
   console.log("✅ Access granted to:", user.email);

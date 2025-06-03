@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const AdminLogin = () => {
+const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "admin@log.in",
@@ -18,7 +18,6 @@ const AdminLogin = () => {
   const { signIn, user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Auto-redirect if already logged in as admin
   useEffect(() => {
     if (user && isAdmin) {
       navigate("/admin/dashboard");
@@ -29,12 +28,11 @@ const AdminLogin = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    console.log("🔐 Attempting admin login with:", { email: formData.email, password: formData.password });
+    console.log("🔐 Admin login attempt:", { email: formData.email });
     
     const { error } = await signIn(formData.email, formData.password);
     
     if (!error) {
-      // The AuthContext will handle checking if user is admin and redirecting appropriately
       navigate("/admin/dashboard");
     }
     
@@ -48,32 +46,25 @@ const AdminLogin = () => {
           <div className="flex items-center justify-center space-x-2 mb-6">
             <Shield className="h-12 w-12 text-red-500" />
             <span className="text-2xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
-              Admin Portal
+              IND Distribution
             </span>
           </div>
+          <h2 className="text-white text-lg">Admin Panel</h2>
         </div>
 
         <Card className="bg-gray-800 border-gray-700">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center text-white">Administrator Access</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center text-white">
+              Administrator Login
+            </CardTitle>
             <CardDescription className="text-center text-gray-400">
-              Restricted access for authorized personnel only
+              Enter your admin credentials to access the dashboard
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-red-900/20 border border-red-600/20 rounded-lg p-3 flex items-start space-x-2">
-              <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm text-red-200">
-                  This area is restricted to authorized administrators only. 
-                  Use the provided admin credentials to access the dashboard.
-                </p>
-              </div>
-            </div>
-
             <div className="bg-blue-900/20 border border-blue-600/20 rounded-lg p-3">
               <div className="text-sm text-blue-200">
-                <p className="font-medium mb-1">Admin Credentials:</p>
+                <p className="font-medium mb-1">Demo Admin Credentials:</p>
                 <p>Email: admin@log.in</p>
                 <p>Password: Nayak@@77</p>
               </div>
@@ -81,7 +72,7 @@ const AdminLogin = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">Administrator Email</Label>
+                <Label htmlFor="email" className="text-white">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -124,7 +115,7 @@ const AdminLogin = () => {
                 {isSubmitting ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Authenticating...
+                    Signing In...
                   </div>
                 ) : (
                   <>
@@ -142,15 +133,9 @@ const AdminLogin = () => {
             </div>
           </CardContent>
         </Card>
-
-        <div className="text-center">
-          <p className="text-xs text-gray-500">
-            For technical support, contact your system administrator
-          </p>
-        </div>
       </div>
     </div>
   );
 };
 
-export default AdminLogin;
+export default Login;
