@@ -1,39 +1,38 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, Shield, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Music, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const AdminLogin = () => {
+const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "Admin@mdi.in",
-    password: "11111111"
+    fullName: "",
+    email: "",
+    password: "",
+    phone: "",
+    whatsapp: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, user, isAdmin } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user && isAdmin) {
-      navigate("/admin/dashboard");
-    }
-  }, [user, isAdmin, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    console.log("🔐 Admin login attempt:", { email: formData.email });
-    
-    const { error } = await signIn(formData.email, formData.password);
+    const { error } = await signUp(formData.email, formData.password, {
+      full_name: formData.fullName,
+      phone: formData.phone,
+      whatsapp: formData.whatsapp
+    });
     
     if (!error) {
-      navigate("/admin/dashboard");
+      navigate("/dashboard");
     }
     
     setIsSubmitting(false);
@@ -44,42 +43,44 @@ const AdminLogin = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-6">
-            <Shield className="h-12 w-12 text-red-500" />
+            <Music className="h-12 w-12 text-red-500" />
             <span className="text-2xl font-bold bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
               IND Distribution
             </span>
           </div>
-          <h2 className="text-white text-lg">Admin Control Center</h2>
+          <h2 className="text-white text-lg">Join the Platform</h2>
         </div>
 
         <Card className="bg-gray-800 border-gray-700">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center text-white">
-              Administrator Access
+              Create Your Account
             </CardTitle>
             <CardDescription className="text-center text-gray-400">
-              Secure login for authorized personnel only
+              Start distributing your music worldwide
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-blue-900/20 border border-blue-600/20 rounded-lg p-3">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-blue-400" />
-                <div className="text-sm text-blue-200">
-                  <p className="font-medium">Admin Credentials:</p>
-                  <p>Email: Admin@mdi.in</p>
-                  <p>Password: 11111111</p>
-                </div>
-              </div>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">Admin Email</Label>
+                <Label htmlFor="fullName" className="text-white">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-white">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Admin@mdi.in"
+                  placeholder="Enter your email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
@@ -88,12 +89,12 @@ const AdminLogin = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">Admin Password</Label>
+                <Label htmlFor="password" className="text-white">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter admin password"
+                    placeholder="Create a password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 pr-10"
@@ -109,6 +110,30 @@ const AdminLogin = () => {
                   </button>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-white">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp" className="text-white">WhatsApp Number (Optional)</Label>
+                <Input
+                  id="whatsapp"
+                  type="tel"
+                  placeholder="Enter your WhatsApp number"
+                  value={formData.whatsapp}
+                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  disabled={isSubmitting}
+                />
+              </div>
               
               <Button
                 type="submit"
@@ -118,12 +143,12 @@ const AdminLogin = () => {
                 {isSubmitting ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Authenticating...
+                    Creating Account...
                   </div>
                 ) : (
                   <>
-                    <Shield className="h-4 w-4 mr-2" />
-                    Access Admin Panel
+                    <User className="h-4 w-4 mr-2" />
+                    Create Account
                   </>
                 )}
               </Button>
@@ -131,7 +156,7 @@ const AdminLogin = () => {
 
             <div className="text-center pt-4 border-t border-gray-600">
               <Link to="/login" className="text-sm text-gray-400 hover:text-gray-300">
-                ← Back to Customer Login
+                Already have an account? Sign in
               </Link>
             </div>
           </CardContent>
@@ -141,4 +166,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin;
+export default Register;

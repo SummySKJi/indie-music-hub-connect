@@ -116,7 +116,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("🔐 Sign in attempt for:", email);
       setLoading(true);
       
-      if (email === 'admin@log.in' && password === 'Nayak@@77') {
+      // Check if this is the admin login
+      if (email === 'Admin@mdi.in' && password === '11111111') {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password: password.trim(),
@@ -179,6 +180,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
+      // Regular user login
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),

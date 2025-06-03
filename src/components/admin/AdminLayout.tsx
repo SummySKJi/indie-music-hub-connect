@@ -18,7 +18,9 @@ import {
   LogOut,
   Menu,
   X,
-  Shield
+  Shield,
+  Upload,
+  Globe
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -33,15 +35,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
-    { icon: Users, label: "User Management", path: "/admin/users" },
-    { icon: Music, label: "Music Management", path: "/admin/releases" },
+    { icon: Music, label: "Music Management", path: "/admin/music-review" },
+    { icon: Users, label: "Customer Management", path: "/admin/customers" },
     { icon: UserCheck, label: "Artist Management", path: "/admin/artists" },
     { icon: Building, label: "Label Management", path: "/admin/labels" },
-    { icon: DollarSign, label: "Financials", path: "/admin/financials" },
-    { icon: FileText, label: "Royalty Reports", path: "/admin/royalty-reports" },
-    { icon: Flag, label: "Copyright Requests", path: "/admin/copyright-requests" },
-    { icon: Youtube, label: "OAC Requests", path: "/admin/oac-requests" },
-    { icon: Settings, label: "Platform Settings", path: "/admin/settings" },
+    { icon: DollarSign, label: "Wallet & Payouts", path: "/admin/payouts" },
+    { icon: Flag, label: "Copyright Requests", path: "/admin/copyright" },
+    { icon: Youtube, label: "OAC Requests", path: "/admin/oac" },
+    { icon: Upload, label: "Royalty Reports", path: "/admin/royalty-upload" },
+    { icon: Globe, label: "Platform Management", path: "/admin/platforms" },
+    { icon: Settings, label: "Settings", path: "/admin/settings" },
   ];
 
   const handleLogout = async () => {
@@ -148,7 +151,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               
               <div className="hidden lg:block">
                 <h1 className="text-xl font-semibold text-white">
-                  IND Distribution - Admin Panel
+                  IND Distribution - Admin Control Center
                 </h1>
               </div>
 
