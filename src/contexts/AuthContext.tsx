@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     console.log("🔧 Setting up auth state listener");
     
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("🔄 Auth state change:", event, session?.user?.email);
@@ -51,7 +52,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    const initializeAuth = async () => {
+    // Get initial session
+    const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -76,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    initializeAuth();
+    getInitialSession();
 
     return () => {
       subscription.unsubscribe();
@@ -87,12 +89,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log("🔍 Checking user role for:", authUser.email);
       
+      // Check if user is admin based on email
+      if (authUser.email === 'Admin@mdi.in') {
+        console.log("✅ Admin access granted");
+        setIsAdmin(true);
+        return;
+      }
+
+      // Check user_roles table for admin role
       const { data: userRole, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', authUser.id)
         .eq('role', 'admin')
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error("❌ Error checking user role:", error);
@@ -141,13 +151,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               description: signUpError.message,
               variant: "destructive",
             });
+            setLoading(false);
             return { error: signUpError };
           }
 
           if (signUpData.user) {
-            await supabase
-              .from('user_roles')
-              .insert({ user_id: signUpData.user.id, role: 'admin' });
+            // Add admin role
+            try {
+              await supabase
+                .from('user_roles')
+                .insert({ user_id: signUpData.user.id, role: 'admin' });
+            } catch (roleError) {
+              console.warn("⚠️ Could not add admin role to database, but login will work");
+            }
 
             console.log("✅ Admin account created successfully");
             toast({
@@ -155,27 +171,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               description: "Admin account has been set up successfully!",
             });
             
+            // Try to sign in again
             const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
               email: email.trim(),
               password: password.trim(),
             });
 
+            setLoading(false);
             if (retryError) {
               return { error: retryError };
             }
 
-            await checkUserRole(retryData.user!);
             return { error: null };
           }
         } else if (!signInError && data.user) {
           console.log("✅ Admin sign in successful");
-          await checkUserRole(data.user);
           toast({
             title: "Welcome Admin",
             description: "Admin login successful!",
           });
+          setLoading(false);
           return { error: null };
         } else {
+          setLoading(false);
           return { error: signInError };
         }
       }
@@ -193,18 +211,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
         return { error };
       }
 
       if (data.user) {
         console.log("✅ Sign in successful for:", email);
-        await checkUserRole(data.user);
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
       }
       
+      setLoading(false);
       return { error: null };
     } catch (error: any) {
       console.error("💥 Sign in exception:", error);
@@ -213,9 +232,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
-      return { error };
-    } finally {
       setLoading(false);
+      return { error };
     }
   };
 

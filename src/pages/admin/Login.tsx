@@ -15,29 +15,51 @@ const AdminLogin = () => {
     password: "11111111"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, user, isAdmin } = useAuth();
+  const { signIn, user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user && isAdmin) {
+    if (!loading && user && isAdmin) {
+      console.log("🔄 Admin authenticated, redirecting to dashboard");
       navigate("/admin/dashboard");
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
+    
     setIsSubmitting(true);
     
     console.log("🔐 Admin login attempt:", { email: formData.email });
     
-    const { error } = await signIn(formData.email, formData.password);
-    
-    if (!error) {
-      navigate("/admin/dashboard");
+    try {
+      const { error } = await signIn(formData.email, formData.password);
+      
+      if (!error) {
+        console.log("✅ Login successful, will redirect via useEffect");
+      } else {
+        console.error("❌ Login failed:", error);
+      }
+    } catch (error) {
+      console.error("💥 Login exception:", error);
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
+
+  // Show loading spinner while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-red-900 to-gray-900">
+        <div className="text-center">
+          <div className="animate-spin inline-block w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full mb-4"></div>
+          <p className="text-white">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-900 via-red-900 to-gray-900">
@@ -104,6 +126,7 @@ const AdminLogin = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                    disabled={isSubmitting}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
